@@ -26,7 +26,7 @@ containerTools.buildLayeredImage {
   ];
   extraCommands = ''
     mkdir -p ./etc/nut ./var/run/nut ./var/state/ups
-    chmod 1777 ./var/run/nut ./var/state/ups
+    chmod 0750 ./var/run/nut ./var/state/ups
   '';
   config = {
     Entrypoint = [ (lib.getExe nut-entrypoint) ];
