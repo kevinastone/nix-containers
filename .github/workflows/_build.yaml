@@ -36,8 +36,6 @@ jobs:
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
-        with:
-          cache-scope: ${{ inputs.container }}
 
       - name: Build ${{ inputs.container }} (${{ matrix.arch }}) image
         run: nix build ".#${{ inputs.container }}" --out-link result -L

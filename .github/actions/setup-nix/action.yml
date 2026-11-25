@@ -1,12 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 name: Setup Nix
-description: Install Nix and restore/save the Nix store cache
-
-inputs:
-  cache-scope:
-    description: Scope prefix for the Nix store cache key (e.g. 'ci' or a container name)
-    required: false
-    default: ci
+description: Install Nix and configure Magic Nix Cache
 
 runs:
   using: composite
@@ -16,10 +10,5 @@ runs:
       with:
         github_access_token: ${{ github.token }}
 
-    - name: Cache Nix Store
-      uses: nix-community/cache-nix-action@v7
-      with:
-        primary-key: nix-${{ runner.arch }}-${{ inputs.cache-scope }}-${{ hashFiles('flake.lock') }}-${{ hashFiles('nix/**') }}
-        restore-prefixes-first-match: |
-          nix-${{ runner.arch }}-${{ inputs.cache-scope }}-${{ hashFiles('flake.lock') }}-
-          nix-${{ runner.arch }}-${{ inputs.cache-scope }}-
+    - name: Setup Magic Nix Cache
+      uses: DeterminateSystems/magic-nix-cache-action@v15

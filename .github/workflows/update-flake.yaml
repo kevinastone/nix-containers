@@ -28,8 +28,6 @@ jobs:
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
-        with:
-          cache-scope: update-flake
 
       - name: Update flake.lock
         id: update
