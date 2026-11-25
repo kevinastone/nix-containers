@@ -18,6 +18,8 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-24.04
+    outputs:
+      containers: ${{ steps.discover.outputs.containers }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -36,12 +38,19 @@ jobs:
       - name: Run Nix checks
         run: nix flake check -L
 
+      - name: Discover containers
+        id: discover
+        run: echo "containers=$(nix eval --json .#lib.x86_64-linux.containers | jq -c)" >> "$GITHUB_OUTPUT"
+
   build:
-    name: Build ${{ matrix.arch }} Image
+    name: Build ${{ matrix.container }} (${{ matrix.arch }})
     needs: [test]
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
+        container: ${{ fromJson(needs.test.outputs.containers) }}
+        arch: [amd64, arm64]
         include:
           - arch: amd64
             runs-on: ubuntu-24.04
@@ -60,23 +69,27 @@ jobs:
 
       - *cache-nix-store
 
-      - name: Build ${{ matrix.arch }} image
+      - name: Build ${{ matrix.container }} (${{ matrix.arch }}) image
         run: |
-          nix build .#ffmpeg --out-link result-${{ matrix.arch }} -L
-          cp -L result-${{ matrix.arch }} result-${{ matrix.arch }}.tar.gz
+          nix build ".#${{ matrix.container }}" --out-link "result-${{ matrix.container }}-${{ matrix.arch }}" -L
+          cp -L "result-${{ matrix.container }}-${{ matrix.arch }}" "result-${{ matrix.container }}-${{ matrix.arch }}.tar.gz"
 
-      - name: Upload ${{ matrix.arch }} artifact
+      - name: Upload ${{ matrix.container }} (${{ matrix.arch }}) artifact
         uses: actions/upload-artifact@v7
         with:
-          name: image-${{ matrix.arch }}
-          path: result-${{ matrix.arch }}.tar.gz
+          name: image-${{ matrix.container }}-${{ matrix.arch }}
+          path: result-${{ matrix.container }}-${{ matrix.arch }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
   push-multiarch:
-    name: Push Multi-Arch Image
-    needs: [build]
+    name: Push ${{ matrix.container }} Multi-Arch Image
+    needs: [test, build]
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        container: ${{ fromJson(needs.test.outputs.containers) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -91,26 +104,26 @@ jobs:
       - name: Download AMD64 artifact
         uses: actions/download-artifact@v8
         with:
-          name: image-amd64
+          name: image-${{ matrix.container }}-amd64
           path: artifacts-amd64
 
       - name: Download ARM64 artifact
         uses: actions/download-artifact@v8
         with:
-          name: image-arm64
+          name: image-${{ matrix.container }}-arm64
           path: artifacts-arm64
 
-      - name: Get ffmpeg version
-        id: ffmpeg-version
-        run: echo "version=$(nix eval --raw .#ffmpeg.imageTag)" >> $GITHUB_OUTPUT
+      - name: Get ${{ matrix.container }} version
+        id: version
+        run: echo "version=$(nix eval --raw ".#${{ matrix.container }}.imageTag")" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ghcr.io/${{ github.repository_owner }}/ffmpeg
+          images: ghcr.io/${{ github.repository }}/${{ matrix.container }}
           tags: |
-            type=raw,value=${{ steps.ffmpeg-version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.version }}
             type=ref,event=branch
             type=semver,pattern={{version}}
 
@@ -125,4 +138,4 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository_owner }}/ffmpeg" artifacts-amd64/result-amd64.tar.gz artifacts-arm64/result-arm64.tar.gz
+          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "artifacts-amd64/result-${{ matrix.container }}-amd64.tar.gz" "artifacts-arm64/result-${{ matrix.container }}-arm64.tar.gz"

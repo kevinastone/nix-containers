@@ -1,4 +1,6 @@
 {
+  description = "Minimal, reproducible, multi-architecture OCI container images built with Nix";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     utils.url = "github:numtide/flake-utils";
@@ -31,36 +33,16 @@
           };
         };
 
-        ffmpegPkg = pkgs.ffmpeg-headless;
-
+        containers = import ./nix/containers { inherit pkgs; };
         scripts = pkgs.callPackage ./nix/scripts { };
       in
       {
-        packages = rec {
-          ffmpeg =
-            with pkgs;
-            dockerTools.buildImage rec {
-              name = "ffmpeg";
-              tag = ffmpegPkg.version;
-              copyToRoot = with dockerTools; [
-                usrBinEnv
-                binSh
-                fakeNss
-                bash
-                coreutils
-                ffmpegPkg
-                jq
-                scripts.argo-ffmpeg-progress
-              ];
-              config.Entrypoint = [ (lib.getExe ffmpegPkg) ];
-              config.Labels = {
-                "org.opencontainers.image.title" = name;
-              };
-            };
-
-          default = ffmpeg;
-
+        packages = containers // {
           inherit (scripts) push-multiarch;
+        };
+
+        lib = {
+          containers = builtins.attrNames containers;
         };
 
         checks = {

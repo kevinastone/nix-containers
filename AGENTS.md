@@ -1,13 +1,13 @@
 # Developer & AI Agent Guidelines (AGENTS.md)
 
-Welcome! If you are an AI coding assistant (like Antigravity) or a developer onboarding to this repository, please read these instructions to understand the code architecture, tooling, and coding standards of Transcoder.
+Welcome! If you are an AI coding assistant (like Antigravity) or a developer onboarding to this repository, please read these instructions to understand the code architecture, tooling, and coding standards of `nix-containers`.
 
 ---
 
 ## 🛠️ Tooling & Commands
 
 ### 1. Code Formatting
-Transcoder is fully Nix-integrated. To format the entire codebase, always run:
+`nix-containers` is fully Nix-integrated. To format the entire codebase, always run:
 ```bash
 nix fmt
 ```
@@ -18,11 +18,11 @@ To verify the flake config, checks, and formatting:
 nix flake check
 ```
 
-To build the OCI container image locally (which produces the symlink `./result` pointing to the built tarball):
+To build a specific OCI container image locally (which produces the symlink `./result` pointing to the built tarball):
 ```bash
+nix build .#<container>
+# e.g.:
 nix build .#ffmpeg
-# or simply:
-nix build
 ```
 
 ### 3. Debugging & Inspecting
@@ -43,11 +43,25 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 
 ## 📁 Repository Structure
 
-- `flake.nix`: Nix package definitions, OCI image configuration, formatting rules, and devShell.
+- `flake.nix`: Nix package definitions, auto-discovered container outputs, formatting rules, and devShell.
+- `nix/containers/`:
+  - `default.nix`: Auto-discovers all subdirectories containing a `default.nix` and calls them via `pkgs.callPackage`.
+  - `ffmpeg/`:
+    - `default.nix`: OCI image derivation for `ffmpeg`.
+    - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
 - `nix/scripts/`:
-  - `argo-ffmpeg-progress.sh`: The progress tracker packaged directly into the OCI container.
   - `push-multiarch.sh`: CI/CD helper script to assemble and push multi-architecture OCI manifests.
-  - `default.nix`: Nix packaging expressions for the shell scripts.
+  - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`push-multiarch`, `dive-archive`).
 - `.github/workflows/`:
-  - `ci.yaml`: CI/CD pipeline that validates the flake, builds images for amd64/arm64, and publishes them to GHCR.
+  - `ci.yaml`: CI/CD pipeline that validates the flake, auto-discovers containers from `flake.nix`, builds images for `amd64`/`arm64`, and publishes them to `ghcr.io/${{ github.repository }}/<container>`.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).
+
+---
+
+## ➕ Adding a New Container
+
+To add a new container (for example, `keycloak`):
+1. Create `nix/containers/<name>/default.nix` returning a `dockerTools.buildImage` (or `buildLayeredImage`) derivation with `name` and `tag` set.
+2. Put any container-specific scripts or assets alongside it in `nix/containers/<name>/`.
+3. Stage new files with `git add` so Nix Flakes includes them in evaluation.
+4. Run `nix fmt` and `nix flake check`.
