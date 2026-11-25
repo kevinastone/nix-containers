@@ -1,14 +1,13 @@
 { pkgs, ... }:
 {
-  push-multiarch = pkgs.writeShellApplication {
-    name = "push-multiarch";
-    runtimeInputs = with pkgs; [
-      regctl
-      gzip
-      coreutils
+  push-multiarch = pkgs.writers.writeNuBin "push-multiarch" {
+    makeWrapperArgs = [
+      "--prefix"
+      "PATH"
+      ":"
+      (pkgs.lib.makeBinPath [ pkgs.regctl ])
     ];
-    text = builtins.readFile ./push-multiarch.sh;
-  };
+  } (builtins.readFile ./push-multiarch.nu);
 
   dive-archive = pkgs.writeShellApplication {
     name = "dive-archive";

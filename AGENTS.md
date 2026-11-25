@@ -47,13 +47,13 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 - `nix/modules/`:
   - `container-tools.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers` and `flake.lib.ci.{build,push}`.
-  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`).
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
 - `nix/scripts/`:
-  - `push-multiarch.sh`: CI/CD helper script to assemble and push multi-architecture OCI manifests.
+  - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
   - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`push-multiarch`, `dive-archive`).
 - `.github/workflows/`:
   - `ci.yaml`: CI/CD pipeline that validates the flake, auto-discovers containers from `flake.nix`, builds images for `amd64`/`arm64`, and publishes them to `ghcr.io/${{ github.repository }}/<container>`.
