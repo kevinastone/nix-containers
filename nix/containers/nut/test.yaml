@@ -1,0 +1,43 @@
+schemaVersion: "2.0.0"
+
+metadataTest:
+  exposedPorts: ["3493"]
+  envVars:
+    - key: "NUT_CONFPATH"
+      value: "/etc/nut"
+    - key: "NUT_STATEPATH"
+      value: "/var/run/nut"
+
+commandTests:
+  - name: "upsd version"
+    command: "upsd"
+    args: ["-V"]
+    expectedOutput: ["Network UPS Tools"]
+
+  - name: "upsdrvctl version"
+    command: "upsdrvctl"
+    args: ["-V"]
+    expectedOutput: ["Network UPS Tools"]
+
+  - name: "usbhid-ups driver version"
+    command: "usbhid-ups"
+    args: ["-V"]
+    expectedOutput: ["Network UPS Tools"]
+
+  - name: "upsc client version"
+    command: "upsc"
+    args: ["-V"]
+    expectedOutput: ["Network UPS Tools"]
+
+fileExistenceTests:
+  - name: "/etc/nut exists"
+    path: "/etc/nut"
+    shouldExist: true
+
+  - name: "/var/run/nut exists"
+    path: "/var/run/nut"
+    shouldExist: true
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true
