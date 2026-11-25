@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Container Pipeline
+name: Publish
 
 on:
   workflow_call:
@@ -25,52 +25,17 @@ permissions:
 
 jobs:
   build:
-    name: Build (${{ matrix.arch }})
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(inputs.arches_json) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache Nix Store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.arch }}-${{ inputs.container }}-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.arch }}-${{ inputs.container }}-
-
-      - name: Build ${{ inputs.container }} (${{ matrix.arch }}) image
-        run: nix build ".#${{ inputs.container }}" --out-link result -L
-
-      - name: Smoke test ${{ inputs.container }} (${{ matrix.arch }})
-        run: nix run ".#${{ inputs.container }}.test" -- result
-
-      - name: Prepare ${{ inputs.container }} (${{ matrix.arch }}) artifact
-        if: github.event_name != 'pull_request'
-        run: cp -L result "${{ matrix.arch }}.tar.gz"
-
-      - name: Upload ${{ inputs.container }} (${{ matrix.arch }}) artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v7
-        with:
-          name: image-${{ inputs.container }}-${{ matrix.arch }}
-          path: ${{ matrix.arch }}.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+    name: Build
+    uses: ./.github/workflows/_build.yaml
+    with:
+      ref: ${{ inputs.ref }}
+      container: ${{ inputs.container }}
+      arches_json: ${{ inputs.arches_json }}
+      upload_artifacts: true
 
   push:
     name: Push
     needs: [build]
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

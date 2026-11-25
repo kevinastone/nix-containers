@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ""
+      container:
+        type: string
+        required: true
+      arches_json:
+        type: string
+        required: true
+      upload_artifacts:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.arch }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(inputs.arches_json) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix Store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.arch }}-${{ inputs.container }}-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.arch }}-${{ inputs.container }}-
+
+      - name: Build ${{ inputs.container }} (${{ matrix.arch }}) image
+        run: nix build ".#${{ inputs.container }}" --out-link result -L
+
+      - name: Smoke test ${{ inputs.container }} (${{ matrix.arch }})
+        run: nix run ".#${{ inputs.container }}.test" -- result
+
+      - name: Prepare ${{ inputs.container }} (${{ matrix.arch }}) artifact
+        if: inputs.upload_artifacts
+        run: cp -L result "${{ matrix.arch }}.tar.gz"
+
+      - name: Upload ${{ inputs.container }} (${{ matrix.arch }}) artifact
+        if: inputs.upload_artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-${{ inputs.container }}-${{ matrix.arch }}
+          path: ${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
+          retention-days: 1

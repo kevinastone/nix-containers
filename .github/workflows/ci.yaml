@@ -65,10 +65,26 @@ jobs:
           CI_JSON=$(nix eval --json .#lib.ci)
           nix run .#ci-matrix -- "ghcr.io/${{ github.repository }}" "$CI_JSON" --github-output "$GITHUB_OUTPUT" ${{ inputs.force && '--force' || '' }}
 
-  container:
+  build:
     name: ${{ matrix.container }}
     needs: [test]
-    if: needs.test.outputs.has_changes == 'true'
+    if: needs.test.outputs.has_changes == 'true' && github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.test.outputs.matrix) }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/_build.yaml
+    with:
+      ref: ${{ inputs.ref }}
+      container: ${{ matrix.container }}
+      arches_json: ${{ toJson(matrix.arches) }}
+
+  publish:
+    name: ${{ matrix.container }}
+    needs: [test]
+    if: needs.test.outputs.has_changes == 'true' && github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -78,7 +94,7 @@ jobs:
       packages: write
       id-token: write
       attestations: write
-    uses: ./.github/workflows/container.yaml
+    uses: ./.github/workflows/_publish.yaml
     with:
       ref: ${{ inputs.ref }}
       container: ${{ matrix.container }}

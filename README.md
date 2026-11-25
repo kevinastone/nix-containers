@@ -103,10 +103,10 @@ nix fmt
 
 ## 🤖 CI/CD & Publishing
 
-The GitHub Actions workflows defined in [.github/workflows/ci.yaml](.github/workflows/ci.yaml) and [.github/workflows/container.yaml](.github/workflows/container.yaml) automate validation and deployment:
+The GitHub Actions workflows defined in [.github/workflows/ci.yaml](.github/workflows/ci.yaml), [.github/workflows/_build.yaml](.github/workflows/_build.yaml), and [.github/workflows/_publish.yaml](.github/workflows/_publish.yaml) automate validation and deployment:
 
 1. **Linting & Change Detection**: Runs `nix flake check`, evaluates `.#lib.ci` (which computes each container's supported architectures and Nix `drvPath`s), and filters out containers whose published `:main` OCI index already matches `dev.nix-containers.drv.<arch>`.
-2. **Independent Per-Container Pipelines**: Spawns an isolated `container.yaml` pipeline per changed container so fast builds push immediately without waiting on slower containers.
+2. **Independent Per-Container Pipelines**: Spawns an isolated `_build.yaml` check on PRs (read-only, fork-safe) or `_publish.yaml` pipeline on `main` per changed container so fast builds push immediately without waiting on slower containers.
 3. **Upstream Tagging**: Tags each published image with its Nix `.imageTag` (plus semver and `:main`) directly from `.#lib.ci`.
 4. **Multi-Arch Push, Signing & Provenance**: Combines architecture builds into a multi-arch OCI index using `push-multiarch`, publishes to `ghcr.io/<owner>/<repo>/<container>`, signs the index digest keyless with Sigstore `cosign`, and attaches GitHub SLSA build provenance attestations.
 
@@ -118,7 +118,7 @@ Published images can be verified using Sigstore `cosign` or the GitHub CLI:
 # Verify keyless Sigstore signature
 cosign verify \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  --certificate-identity-regexp '^https://github\.com/kevinastone/nix-containers/\.github/workflows/(ci|container|update-flake)\.yaml@refs/heads/main$' \
+  --certificate-identity-regexp '^https://github\.com/kevinastone/nix-containers/\.github/workflows/.+@refs/heads/main$' \
   ghcr.io/kevinastone/nix-containers/ffmpeg:main
 
 # Verify GitHub SLSA build provenance attestation
