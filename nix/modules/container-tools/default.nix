@@ -64,7 +64,7 @@ let
           raw = lib.toList (pkg.meta.license or [ ]);
           ids = lib.filter (x: x != null) (map (l: l.spdxId or l.shortName or null) raw);
         in
-        if ids != [ ] then lib.concatStringsSep " AND " ids else "MIT";
+        if ids != [ ] then lib.concatStringsSep " AND " ids else null;
 
       wrapBuilder =
         {
@@ -85,7 +85,7 @@ let
               throw "containerTools: `tag` or `package` must be provided",
           description ? if package != null then package.meta.description or null else null,
           source ? defaultSource,
-          licenses ? if package != null then packageLicense package else "MIT",
+          licenses ? if package != null then packageLicense package else null,
           runAsNonRoot ? true,
           includeCaCerts ? true,
           includeTzdata ? true,
@@ -102,6 +102,8 @@ let
             "org.opencontainers.image.title" = name;
             "org.opencontainers.image.version" = tag;
             "org.opencontainers.image.source" = source;
+          }
+          // lib.optionalAttrs (licenses != null) {
             "org.opencontainers.image.licenses" = licenses;
           }
           // lib.optionalAttrs (description != null) {
