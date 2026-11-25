@@ -94,7 +94,7 @@ spec:
 3. Run `nix fmt` and `nix flake check`.
 4. Test building locally with `nix build .#<name>`.
 
-`nix/containers/default.nix` automatically discovers all subdirectories containing a `default.nix`, exposes them as flake packages, and registers them in `lib.containers` for GitHub Actions.
+`nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, exposes them as flake packages on their supported platforms, and computes `lib.ci.{build,push}` for GitHub Actions.
 
 ---
 

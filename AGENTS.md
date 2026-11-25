@@ -43,12 +43,12 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 
 ## 📁 Repository Structure
 
-- `flake.nix`: Nix package definitions, auto-discovered container outputs, formatting rules, and devShell.
-- `nix/lib/`:
-  - `default.nix`: Exports shared Nix helpers (`containerTools`, also exposed via the flake's `lib` output).
-  - `container-tools.nix`: Wraps `pkgs.dockerTools` with `buildImage` and `buildLayeredImage` helpers that inject standard OCI labels (`title`, `version`, `source`, `licenses`, `description`) and optionally derive `name`, `tag`, `description`, `config.Entrypoint`, and root package inclusion from a primary `package` argument (all overrideable).
+- `flake.nix`: Entry point using `flake-parts` that wires up `nix/modules/`, `push-multiarch`, and `devShells.default`.
+- `nix/modules/`:
+  - `container-tools.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
+  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers` and `flake.lib.ci.{build,push}`.
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`).
 - `nix/containers/`:
-  - `default.nix`: Auto-discovers all subdirectories containing a `default.nix` and calls them via `pkgs.callPackage` with `containerTools`.
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
