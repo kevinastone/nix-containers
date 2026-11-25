@@ -1,5 +1,4 @@
 {
-  lib,
   containerTools,
   bash,
   coreutils,
@@ -17,7 +16,7 @@ let
 in
 containerTools.buildImage {
   name = "ffmpeg";
-  tag = ffmpeg-headless.version;
+  package = ffmpeg-headless;
   description = "Minimal ffmpeg container with Argo Workflows progress reporting";
   copyToRoot = with containerTools; [
     usrBinEnv
@@ -25,9 +24,7 @@ containerTools.buildImage {
     fakeNss
     bash
     coreutils
-    ffmpeg-headless
     jq
     argo-ffmpeg-progress
   ];
-  config.Entrypoint = [ (lib.getExe ffmpeg-headless) ];
 }
