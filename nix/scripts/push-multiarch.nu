@@ -12,6 +12,22 @@ def parse-spec [spec: string]: nothing -> record<platform: string, tar: string> 
     {platform: $parts.0, tar: $tar}
 }
 
+def oci-labels [oci_dir: path]: nothing -> record {
+    let entries = (
+        ^regctl image config $"ocidir://($oci_dir)" --format raw-body
+        | from json
+        | get -o config.Labels
+        | default {}
+        | transpose k v
+        | where { $in.k | str starts-with "org.opencontainers.image." }
+    )
+    if ($entries | is-empty) {
+        {}
+    } else {
+        $entries | transpose -r -d
+    }
+}
+
 # Import Nix-built OCI archives, push single-arch images by digest, and publish a multi-arch OCI index.
 def main [
     repo: string # Target registry repository (e.g. ghcr.io/owner/repo/image)
@@ -46,13 +62,6 @@ def main [
     }
     let specs = $images | each { parse-spec $in }
 
-    let annotations = (
-        ($drvs | transpose k v | each { $"dev.nix-containers.drv.($in.k)=($in.v)" })
-        | if ($source != "") { prepend $"org.opencontainers.image.source=($source)" } else { $in }
-        | each { [--annotation $in] }
-        | flatten
-    )
-
     let tmp_dir = (mktemp -d)
     try {
         let refs = (
@@ -66,6 +75,21 @@ def main [
                 ^regctl image copy $"ocidir://($oci_dir)" $"($repo)@($digest)"
                 [--ref $"($repo)@($digest)" --platform $it.item.platform]
             }
+            | flatten
+        )
+
+        let base_annotations = oci-labels ($tmp_dir | path join "oci-0")
+        let drv_annotations = (
+            $drvs
+            | transpose k v
+            | reduce -f {} {|it, acc| $acc | upsert $"dev.nix-containers.drv.($it.k)" $it.v }
+        )
+        let annotations = (
+            $base_annotations
+            | merge $drv_annotations
+            | if ($source != "") { upsert "org.opencontainers.image.source" $source } else { $in }
+            | transpose k v
+            | each { [--annotation $"($in.k)=($in.v)"] }
             | flatten
         )
 
