@@ -4,7 +4,7 @@
       lib,
       pkgs,
       oci,
-      imageOptions,
+      evalImageConfig,
       mkTestSuite,
       ...
     }:
@@ -15,25 +15,18 @@
         coreutils
         tzdata
         ;
-      inherit (imageOptions) defaultNonRootUser evalImageConfig;
 
-      mkUserNss =
-        {
-          name,
-          uid,
-          gid,
-          home,
-        }:
+      mkUsersNss =
+        users:
         dockerTools.fakeNss.override {
-          extraPasswdLines = [
-            "${name}:x:${toString uid}:${toString gid}:Non-root user:${
-              if home != null then home else "/var/empty"
+          extraPasswdLines = map (
+            u:
+            "${u.name}:x:${toString u.uid}:${toString u.gid}:Non-root user:${
+              if u.home != null then u.home else "/var/empty"
             }:/sbin/nologin"
-          ];
-          extraGroupLines = [ "${name}:x:${toString gid}:" ];
+          ) users;
+          extraGroupLines = lib.unique (map (u: "${u.name}:x:${toString u.gid}:") users);
         };
-
-      nonRootNss = mkUserNss defaultNonRootUser;
 
       buildLayeredImage =
         args:
@@ -50,6 +43,7 @@
             extraTags
             runAsNonRoot
             user
+            extraUsers
             includeCaCerts
             includeTzdata
             enableShell
@@ -63,10 +57,17 @@
             fakeRootCommands
             ;
 
-          userNss = if user == defaultNonRootUser then nonRootNss else mkUserNss user;
+          allUsers = lib.optional runAsNonRoot user ++ builtins.attrValues extraUsers;
 
-          defaultUid = if runAsNonRoot then user.uid else 0;
-          defaultGid = if runAsNonRoot then user.gid else 0;
+          userHomeDirs = builtins.listToAttrs (
+            map (u: {
+              name = u.home;
+              value = {
+                mode = "0755";
+                inherit (u) uid gid;
+              };
+            }) (builtins.filter (u: u.home != null) allUsers)
+          );
 
           defaultDirs = {
             "/tmp" = {
@@ -75,13 +76,7 @@
               gid = 0;
             };
           }
-          // lib.optionalAttrs (runAsNonRoot && user.home != null) {
-            ${user.home} = {
-              mode = "0755";
-              uid = defaultUid;
-              gid = defaultGid;
-            };
-          };
+          // userHomeDirs;
 
           resolvedDirs = lib.mapAttrs (
             path: spec:
@@ -128,7 +123,7 @@
           );
 
           baseContents =
-            lib.optional runAsNonRoot userNss
+            lib.optional (allUsers != [ ]) (mkUsersNss allUsers)
             ++ lib.optional includeCaCerts dockerTools.caCertificates
             ++ lib.optional includeTzdata tzdata
             ++ lib.optionals enableShell [
@@ -221,7 +216,7 @@
     in
     {
       containerTools = {
-        inherit buildLayeredImage mkUserNss nonRootNss;
+        inherit buildLayeredImage;
       };
     };
 }

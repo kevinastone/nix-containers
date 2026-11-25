@@ -2,40 +2,49 @@
 let
   inherit (lib) mkOption types;
 
-  defaultNonRootUser = {
-    name = "nonroot";
-    uid = 65532;
-    gid = 65532;
-    home = "/home/nonroot";
+  mkUserSubmodule =
+    {
+      defaultName ? null,
+      defaultUid ? null,
+    }:
+    types.submodule (
+      { name, config, ... }:
+      {
+        options = {
+          name = mkOption {
+            type = types.nonEmptyStr;
+            default = if defaultName != null then defaultName else name;
+            description = "Username recorded in /etc/passwd and /etc/group.";
+          };
+          uid = mkOption (
+            {
+              type = types.ints.positive;
+              description = "Numeric UID (> 0).";
+            }
+            // lib.optionalAttrs (defaultUid != null) {
+              default = defaultUid;
+            }
+          );
+          gid = mkOption {
+            type = types.ints.positive;
+            default = config.uid;
+            description = "Numeric GID (> 0).";
+          };
+          home = mkOption {
+            type = types.nullOr (types.strMatching "^/.+");
+            default = "/home/${config.name}";
+            description = "Absolute home directory path (created automatically), or null to omit.";
+          };
+        };
+      }
+    );
+
+  userSubmodule = mkUserSubmodule {
+    defaultName = "nonroot";
+    defaultUid = 65532;
   };
 
-  userSubmodule = types.submodule (
-    { config, ... }:
-    {
-      options = {
-        name = mkOption {
-          type = types.nonEmptyStr;
-          default = defaultNonRootUser.name;
-          description = "Username recorded in /etc/passwd and /etc/group.";
-        };
-        uid = mkOption {
-          type = types.ints.positive;
-          default = defaultNonRootUser.uid;
-          description = "Numeric UID (> 0) for Config.User and default directory ownership.";
-        };
-        gid = mkOption {
-          type = types.ints.positive;
-          default = config.uid;
-          description = "Numeric GID (> 0) for Config.User and default directory ownership.";
-        };
-        home = mkOption {
-          type = types.nullOr (types.strMatching "^/.+");
-          default = "/home/${config.name}";
-          description = "Absolute home directory path (created automatically), or null to omit.";
-        };
-      };
-    }
-  );
+  extraUserSubmodule = mkUserSubmodule { };
 
   dirSubmodule =
     defaultUid: defaultGid:
@@ -124,7 +133,12 @@ let
         user = mkOption {
           type = userSubmodule;
           default = { };
-          description = "Non-root user identity when runAsNonRoot = true.";
+          description = "Primary non-root user identity when runAsNonRoot = true.";
+        };
+        extraUsers = mkOption {
+          type = types.attrsOf extraUserSubmodule;
+          default = { };
+          description = "Additional /etc/passwd and /etc/group entries (e.g. privilege-dropping daemon users).";
         };
         includeCaCerts = mkOption {
           type = types.bool;
@@ -199,16 +213,19 @@ let
       cfg = evaluated.config;
       opts = evaluated.options;
       passthroughArgs = removeAttrs cfg ([ "_module" ] ++ builtins.attrNames opts);
+      extraUserNames = map (u: u.name) (builtins.attrValues cfg.extraUsers);
+      allUserNames = lib.optional cfg.runAsNonRoot cfg.user.name ++ extraUserNames;
     in
     assert lib.assertMsg (
       cfg.runAsNonRoot || !(args ? user)
-    ) "containerTools: `user` cannot be set when `runAsNonRoot = false`";
+    ) "containerTools: `user` cannot be set when `runAsNonRoot = false` (use `extraUsers` instead)";
+    assert lib.assertMsg (
+      builtins.length allUserNames == builtins.length (lib.unique allUserNames)
+    ) "containerTools: duplicate usernames across `user` and `extraUsers`";
     {
       inherit cfg passthroughArgs;
     };
 in
 {
-  perSystem._module.args.imageOptions = {
-    inherit defaultNonRootUser evalImageConfig;
-  };
+  perSystem._module.args.evalImageConfig = evalImageConfig;
 }

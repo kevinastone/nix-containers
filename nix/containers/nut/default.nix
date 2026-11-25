@@ -9,13 +9,10 @@ let
   stateDir = "/var/run/nut";
 
   nutmon = {
-    name = "nutmon";
     uid = 100;
     gid = 100;
     home = stateDir;
   };
-
-  nutNss = containerTools.mkUserNss nutmon;
 
   nutStateDir = {
     inherit (nutmon) uid gid;
@@ -32,10 +29,8 @@ containerTools.buildLayeredImage {
   package = nut;
   runAsNonRoot = false;
   enableShell = true;
-  contents = [
-    nutNss
-    nut-entrypoint
-  ];
+  extraUsers.nutmon = nutmon;
+  contents = [ nut-entrypoint ];
   dirs = {
     ${confDir} = {
       inherit (nutmon) gid;
