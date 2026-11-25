@@ -27,6 +27,13 @@ def render-structure-test [name: string]: nothing -> string {
         '    args: ["--version"]'
         ""
         "fileExistenceTests:"
+        '  - name: "/home/nonroot exists"'
+        '    path: "/home/nonroot"'
+        "    shouldExist: true"
+        "    uid: 65532"
+        "    gid: 65532"
+        '    permissions: "drwxr-xr-x"'
+        ""
         '  - name: "/tmp exists"'
         '    path: "/tmp"'
         "    shouldExist: true"

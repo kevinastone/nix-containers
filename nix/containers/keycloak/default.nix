@@ -25,9 +25,13 @@ containerTools.buildLayeredImage {
     gnused
     findutils
   ];
+  dirs = {
+    "/opt/keycloak/conf" = { };
+    "/opt/keycloak/data" = { };
+    "/opt/keycloak/providers" = { };
+    "/opt/keycloak/themes" = { };
+  };
   extraCommands = ''
-    mkdir -p ./opt/keycloak/conf ./opt/keycloak/data ./opt/keycloak/providers ./opt/keycloak/themes
-    chmod 1777 ./opt/keycloak/conf ./opt/keycloak/data ./opt/keycloak/providers ./opt/keycloak/themes
     ln -s ${keycloakWithMetrics}/bin ./opt/keycloak/bin
     ln -s ${keycloakWithMetrics}/lib ./opt/keycloak/lib
   '';

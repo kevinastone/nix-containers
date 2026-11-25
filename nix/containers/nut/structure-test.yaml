@@ -34,10 +34,23 @@ fileExistenceTests:
   - name: "/etc/nut exists"
     path: "/etc/nut"
     shouldExist: true
+    uid: 0
+    gid: 100
+    permissions: "drwxr-x---"
 
   - name: "/var/run/nut exists"
     path: "/var/run/nut"
     shouldExist: true
+    uid: 100
+    gid: 100
+    permissions: "drwxr-x---"
+
+  - name: "/var/state/ups exists"
+    path: "/var/state/ups"
+    shouldExist: true
+    uid: 100
+    gid: 100
+    permissions: "drwxr-x---"
 
   - name: "/tmp exists"
     path: "/tmp"

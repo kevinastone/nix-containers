@@ -5,9 +5,11 @@
   writeShellApplication,
 }:
 let
-  nutNss = containerTools.fakeNss.override {
-    extraPasswdLines = [ "nutmon:x:100:100:NUT:/var/run/nut:/sbin/nologin" ];
-    extraGroupLines = [ "nutmon:x:100:" ];
+  nutNss = containerTools.mkUserNss {
+    name = "nutmon";
+    uid = 100;
+    gid = 100;
+    home = "/var/run/nut";
   };
 
   nut-entrypoint = writeShellApplication {
@@ -24,10 +26,22 @@ containerTools.buildLayeredImage {
     nutNss
     nut-entrypoint
   ];
-  extraCommands = ''
-    mkdir -p ./etc/nut ./var/run/nut ./var/state/ups
-    chmod 0750 ./var/run/nut ./var/state/ups
-  '';
+  dirs = {
+    "/etc/nut" = {
+      gid = 100;
+      mode = "0750";
+    };
+    "/var/run/nut" = {
+      uid = 100;
+      gid = 100;
+      mode = "0750";
+    };
+    "/var/state/ups" = {
+      uid = 100;
+      gid = 100;
+      mode = "0750";
+    };
+  };
   config = {
     Entrypoint = [ (lib.getExe nut-entrypoint) ];
     Env = [

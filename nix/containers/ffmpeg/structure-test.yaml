@@ -25,6 +25,13 @@ commandTests:
     expectedOutput: ["(?m)^50/100$"]
 
 fileExistenceTests:
+  - name: "/home/nonroot exists"
+    path: "/home/nonroot"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
   - name: "/tmp exists"
     path: "/tmp"
     shouldExist: true
