@@ -74,8 +74,9 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `new-container`, `push-multiarch`, `update-readme`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `new-container`, `push-multiarch`, `update-readme`) and `checks.readme-catalog`.
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
+    - `flake-update-report.nu`: CI/CD Nushell script that diffs changed containers across `flake.lock` updates and renders `nvd` runtime closure changelogs for PR descriptions.
     - `new-container.nu`: Nushell scaffolding script (`new-container <name> [--package <pkg>]`) generating `default.nix`, `structure-test.yaml`, and `README.md`.
     - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
     - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
@@ -89,7 +90,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `ci.yaml`: Top-level CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only builds on PRs (`_build.yaml`) or full build-and-publish pipelines on non-PR runs (`_publish.yaml`).
   - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
   - `_publish.yaml`: Reusable per-container publish workflow that calls `_build.yaml` and publishes, signs, and attests the multi-arch OCI index on GHCR.
-  - `update-flake.yaml`: Weekly scheduled workflow to update `flake.lock` and trigger `ci.yaml`.
+  - `update-flake.yaml`: Weekly scheduled workflow that updates `flake.lock`, opens/updates a PR with `nvd` runtime closure changelogs, and runs multi-arch `_build.yaml` validation.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).
 
 ---

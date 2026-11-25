@@ -44,6 +44,12 @@ in
           '';
         };
 
+        flake-update-report = writeNuApplication {
+          name = "flake-update-report";
+          file = ./flake-update-report.nu;
+          runtimeInputs = [ pkgs.nvd ];
+        };
+
         new-container = writeNuApplication {
           name = "new-container";
           file = ./new-container.nu;

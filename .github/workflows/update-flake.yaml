@@ -15,9 +15,11 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      pull-requests: write
     outputs:
-      updated: ${{ steps.commit.outputs.updated }}
-      sha: ${{ steps.commit.outputs.sha }}
+      has_changes: ${{ steps.report.outputs.has_changes }}
+      matrix: ${{ steps.report.outputs.matrix }}
+      sha: ${{ steps.pr.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -26,40 +28,68 @@ jobs:
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
+        with:
+          cache-scope: update-flake
 
       - name: Update flake.lock
-        run: nix flake update
-
-      - name: Check for changes and push to main
-        id: commit
+        id: update
         run: |
+          nix flake update
           if git diff --quiet flake.lock; then
             echo "No flake.lock updates available."
             echo "updated=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          else
+            echo "updated=true" >> "$GITHUB_OUTPUT"
           fi
 
-          nix flake check -L
+      - name: Run Nix checks
+        if: steps.update.outputs.updated == 'true'
+        run: nix flake check -L
 
+      - name: Generate changelog report
+        id: report
+        if: steps.update.outputs.updated == 'true'
+        run: |
+          git worktree add --detach /tmp/before HEAD
+          nix run .#flake-update-report -- \
+            /tmp/before . \
+            --body-file /tmp/pr-body.md \
+            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Open or update Pull Request
+        id: pr
+        if: steps.update.outputs.updated == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          branch="chore/update-flake-lock"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
           git add flake.lock
           git commit -m "chore(deps): update flake.lock"
-          git push origin main
-
-          echo "updated=true" >> "$GITHUB_OUTPUT"
+          git push --force origin "$branch"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-  ci:
-    name: Build & Publish Updated Images
+          if gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr edit "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
+          else
+            gh pr create --base main --head "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
+          fi
+
+  build:
+    name: ${{ matrix.container }}
     needs: [update-flake]
-    if: needs.update-flake.outputs.updated == 'true'
+    if: needs.update-flake.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.update-flake.outputs.matrix) }}
     permissions:
       contents: read
-      packages: write
-      id-token: write
-      attestations: write
-    uses: ./.github/workflows/ci.yaml
+    uses: ./.github/workflows/_build.yaml
     with:
       ref: ${{ needs.update-flake.outputs.sha }}
-    secrets: inherit
+      container: ${{ matrix.container }}
+      arches_json: ${{ toJson(matrix.arches) }}

@@ -121,6 +121,17 @@
                   ${contentsAttr} = mergedContents;
                 };
 
+              closure = pkgs.closureInfo {
+                rootPaths = mergedContents ++ [
+                  (pkgs.writeText "${name}-config.json" (
+                    builtins.toJSON {
+                      config = mergedConfig;
+                      inherit extraCommands;
+                    }
+                  ))
+                ];
+              };
+
               testSuite = mkTestSuite {
                 inherit name runAsNonRoot;
                 structureTestConfig = structureTest;
@@ -129,7 +140,7 @@
             in
             (builder builderArgs).overrideAttrs (old: {
               meta = (old.meta or { }) // oci.mkMeta { inherit package description; } // meta;
-              passthru = (old.passthru or { }) // passthru // testSuite;
+              passthru = (old.passthru or { }) // passthru // { inherit closure; } // testSuite;
             });
         in
         buildFn;
