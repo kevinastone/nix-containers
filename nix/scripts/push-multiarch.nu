@@ -12,9 +12,9 @@ def parse-spec [spec: string]: nothing -> record<platform: string, tar: string> 
     {platform: $parts.0, tar: $tar}
 }
 
-def oci-labels [oci_dir: path]: nothing -> record {
+def oci-labels [image_ref: string]: nothing -> record {
     let entries = (
-        ^regctl image config $"ocidir://($oci_dir)" --format raw-body
+        ^regctl image config $image_ref --format raw-body
         | from json
         | get -o config.Labels
         | default {}
@@ -28,7 +28,7 @@ def oci-labels [oci_dir: path]: nothing -> record {
     }
 }
 
-# Import Nix-built OCI archives, push single-arch images by digest, and publish a multi-arch OCI index.
+# Import Nix-built OCI archives, assemble a local multi-arch OCI index, and push it to all tags.
 def main [
     repo: string # Target registry repository (e.g. ghcr.io/owner/repo/image)
     ...images: string # One or more <platform>=<image-tar> specs
@@ -64,21 +64,20 @@ def main [
 
     let tmp_dir = (mktemp -d)
     try {
+        let oci_dir = $tmp_dir | path join "oci"
         let refs = (
             $specs
             | enumerate
-            | par-each {|it|
-                let oci_dir = $tmp_dir | path join $"oci-($it.index)"
-                ^regctl image import $"ocidir://($oci_dir)" $it.item.tar
-                let digest = (^regctl image digest $"ocidir://($oci_dir)" | str trim)
-                print $"Pushing ($it.item.platform) digest: ($digest) to ($repo)..."
-                ^regctl image copy $"ocidir://($oci_dir)" $"($repo)@($digest)"
-                [--ref $"($repo)@($digest)" --platform $it.item.platform]
+            | each {|it|
+                let local_ref = $"ocidir://($oci_dir):arch-($it.index)"
+                print $"Importing ($it.item.platform) archive..."
+                ^regctl image import $local_ref $it.item.tar
+                [--ref $local_ref --platform $it.item.platform]
             }
             | flatten
         )
 
-        let base_annotations = oci-labels ($tmp_dir | path join "oci-0")
+        let base_annotations = (oci-labels $"ocidir://($oci_dir):arch-0")
         let drv_annotations = (
             $drvs
             | transpose k v
@@ -93,12 +92,17 @@ def main [
             | flatten
         )
 
+        let index_ref = $"ocidir://($oci_dir):index"
+        print "Assembling multi-arch OCI index..."
+        ^regctl index create $index_ref ...$annotations ...$refs
+
+        let index_digest = (^regctl image digest $index_ref | str trim)
+
         for tag in $resolved_tags {
-            print $"Creating and pushing OCI index for ($tag)..."
-            ^regctl index create $tag ...$annotations ...$refs
+            print $"Pushing multi-arch OCI index to ($tag)..."
+            ^regctl image copy $index_ref $tag
         }
 
-        let index_digest = (^regctl manifest digest ($resolved_tags | first) | str trim)
         print $"Published OCI index digest: ($repo)@($index_digest)"
 
         if $github_output != null {
