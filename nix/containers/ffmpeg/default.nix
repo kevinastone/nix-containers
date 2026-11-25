@@ -1,6 +1,6 @@
 {
   lib,
-  dockerTools,
+  containerTools,
   bash,
   coreutils,
   ffmpeg-headless,
@@ -15,10 +15,11 @@ let
     text = builtins.readFile ./argo-ffmpeg-progress.sh;
   };
 in
-dockerTools.buildImage rec {
+containerTools.buildImage {
   name = "ffmpeg";
   tag = ffmpeg-headless.version;
-  copyToRoot = with dockerTools; [
+  description = "Minimal ffmpeg container with Argo Workflows progress reporting";
+  copyToRoot = with containerTools; [
     usrBinEnv
     binSh
     fakeNss
@@ -29,7 +30,4 @@ dockerTools.buildImage rec {
     argo-ffmpeg-progress
   ];
   config.Entrypoint = [ (lib.getExe ffmpeg-headless) ];
-  config.Labels = {
-    "org.opencontainers.image.title" = name;
-  };
 }

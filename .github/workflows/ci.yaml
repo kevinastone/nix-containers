@@ -149,5 +149,6 @@ jobs:
       - name: ⬆️ Push Multi-Arch Image to GHCR
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "artifacts-amd64/result-${{ matrix.container }}-amd64.tar.gz" "artifacts-arm64/result-${{ matrix.container }}-arm64.tar.gz"

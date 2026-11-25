@@ -33,7 +33,11 @@
           };
         };
 
-        containers = import ./nix/containers { inherit pkgs; };
+        nixLib = import ./nix/lib { inherit pkgs; };
+        containers = import ./nix/containers {
+          inherit pkgs;
+          inherit (nixLib) containerTools;
+        };
         scripts = pkgs.callPackage ./nix/scripts { };
       in
       {
@@ -41,7 +45,7 @@
           inherit (scripts) push-multiarch;
         };
 
-        lib = {
+        lib = nixLib // {
           containers = builtins.attrNames containers;
         };
 

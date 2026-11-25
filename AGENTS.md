@@ -44,8 +44,11 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 ## 📁 Repository Structure
 
 - `flake.nix`: Nix package definitions, auto-discovered container outputs, formatting rules, and devShell.
+- `nix/lib/`:
+  - `default.nix`: Exports shared Nix helpers (`containerTools`, also exposed via the flake's `lib` output).
+  - `container-tools.nix`: Wraps `pkgs.dockerTools` with `buildImage` and `buildLayeredImage` helpers that inject standard OCI labels (`title`, `version`, `source`, `licenses`, `description`).
 - `nix/containers/`:
-  - `default.nix`: Auto-discovers all subdirectories containing a `default.nix` and calls them via `pkgs.callPackage`.
+  - `default.nix`: Auto-discovers all subdirectories containing a `default.nix` and calls them via `pkgs.callPackage` with `containerTools`.
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
@@ -61,7 +64,7 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 ## ➕ Adding a New Container
 
 To add a new container (for example, `keycloak`):
-1. Create `nix/containers/<name>/default.nix` returning a `dockerTools.buildImage` (or `buildLayeredImage`) derivation with `name` and `tag` set.
+1. Create `nix/containers/<name>/default.nix` using `containerTools.buildImage` (or `containerTools.buildLayeredImage`) with `name`, `tag`, and optional `description` (which automatically sets standard OCI labels including `org.opencontainers.image.source`).
 2. Put any container-specific scripts or assets alongside it in `nix/containers/<name>/`.
 3. Stage new files with `git add` so Nix Flakes includes them in evaluation.
 4. Run `nix fmt` and `nix flake check`.

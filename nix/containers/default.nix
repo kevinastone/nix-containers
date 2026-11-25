@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, containerTools }:
 let
   inherit (pkgs) lib;
   entries = builtins.readDir ./.;
@@ -6,4 +6,6 @@ let
     name: type: type == "directory" && builtins.pathExists (./. + "/${name}/default.nix")
   ) entries;
 in
-lib.mapAttrs (name: _: pkgs.callPackage (./. + "/${name}") { }) containerDirs
+lib.mapAttrs (
+  name: _: pkgs.callPackage (./. + "/${name}") { inherit containerTools; }
+) containerDirs

@@ -28,12 +28,18 @@ regctl image copy ocidir://./local-oci-amd64 "$REPO@$AMD64_DIGEST"
 echo "Pushing ARM64 digest: $ARM64_DIGEST to $REPO..."
 regctl image copy ocidir://./local-oci-arm64 "$REPO@$ARM64_DIGEST"
 
+ANNOTATION_ARGS=()
+if [ -n "${SOURCE_URL:-}" ]; then
+  ANNOTATION_ARGS+=(--annotation "org.opencontainers.image.source=$SOURCE_URL")
+fi
+
 # Create and push the multi-architecture manifest index for each tag
 # Since TAGS is multiline, we read it line by line
 echo "$TAGS" | while read -r tag || [ -n "$tag" ]; do
   if [ -n "$tag" ]; then
     echo "Creating and pushing multi-arch index for $tag..."
     regctl index create "$tag" \
+      "${ANNOTATION_ARGS[@]}" \
       --ref "$REPO@$AMD64_DIGEST" \
       --platform linux/amd64 \
       --ref "$REPO@$ARM64_DIGEST" \
