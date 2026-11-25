@@ -36,11 +36,23 @@ in
         }) (containerArches container)
       ) containerNames;
 
-      push = map (container: {
-        inherit container;
-        arches = map (a: a.arch) (containerArches container);
-        inherit (builtins.head (containerArches container)) system;
-      }) (builtins.filter (c: containerArches c != [ ]) containerNames);
+      push = map (
+        container:
+        let
+          arches = containerArches container;
+          firstSystem = (builtins.head arches).system;
+        in
+        {
+          inherit container;
+          version = config.flake.packages.${firstSystem}.${container}.imageTag;
+          drvs = builtins.listToAttrs (
+            map (a: {
+              name = a.arch;
+              value = builtins.unsafeDiscardStringContext config.flake.packages.${a.system}.${container}.drvPath;
+            }) arches
+          );
+        }
+      ) (builtins.filter (c: containerArches c != [ ]) containerNames);
     };
   };
 

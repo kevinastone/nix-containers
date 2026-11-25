@@ -1,13 +1,19 @@
 { pkgs, ... }:
+let
+  mkRegctlNuScript =
+    name: file:
+    pkgs.writers.writeNuBin name {
+      makeWrapperArgs = [
+        "--prefix"
+        "PATH"
+        ":"
+        (pkgs.lib.makeBinPath [ pkgs.regctl ])
+      ];
+    } (builtins.readFile file);
+in
 {
-  push-multiarch = pkgs.writers.writeNuBin "push-multiarch" {
-    makeWrapperArgs = [
-      "--prefix"
-      "PATH"
-      ":"
-      (pkgs.lib.makeBinPath [ pkgs.regctl ])
-    ];
-  } (builtins.readFile ./push-multiarch.nu);
+  ci-matrix = mkRegctlNuScript "ci-matrix" ./ci-matrix.nu;
+  push-multiarch = mkRegctlNuScript "push-multiarch" ./push-multiarch.nu;
 
   dive-archive = pkgs.writeShellApplication {
     name = "dive-archive";

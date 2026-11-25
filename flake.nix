@@ -32,7 +32,7 @@
         in
         {
           packages = {
-            inherit (scripts) push-multiarch;
+            inherit (scripts) ci-matrix push-multiarch;
           };
 
           devShells.default = pkgs.mkShell {

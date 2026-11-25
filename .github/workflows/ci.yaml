@@ -6,6 +6,12 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force rebuild and push all containers even if unchanged"
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       ref:
@@ -26,6 +32,7 @@ jobs:
     outputs:
       build_matrix: ${{ steps.discover.outputs.build_matrix }}
       push_matrix: ${{ steps.discover.outputs.push_matrix }}
+      has_changes: ${{ steps.discover.outputs.has_changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -37,32 +44,40 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - &cache-nix-store
+      - &cache-nix-ci
         name: Cache Nix Store
         uses: nix-community/cache-nix-action@v7
         with:
-          primary-key: ${{ runner.os }}-nix-${{ hashFiles('flake.lock') }}
+          primary-key: nix-${{ runner.arch }}-ci-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.arch }}-ci-
 
       - name: Run Nix checks
         run: nix flake check -L
 
-      - name: Discover containers
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Discover changed containers
         id: discover
+        if: github.event_name != 'pull_request'
         run: |
-          echo "build_matrix=$(nix eval --json .#lib.ci.build | jq -c)" >> "$GITHUB_OUTPUT"
-          echo "push_matrix=$(nix eval --json .#lib.ci.push | jq -c)" >> "$GITHUB_OUTPUT"
+          CI_JSON=$(nix eval --json .#lib.ci)
+          nix run .#ci-matrix -- "ghcr.io/${{ github.repository }}" "$CI_JSON" --github-output "$GITHUB_OUTPUT" ${{ inputs.force && '--force' || '' }}
 
   build:
     name: Build ${{ matrix.container }} (${{ matrix.arch }})
     needs: [test]
+    if: needs.test.outputs.has_changes == 'true'
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJson(needs.test.outputs.build_matrix) }}
-    if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main')) ||
-      github.event_name == 'workflow_call'
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -74,24 +89,29 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - *cache-nix-store
+      - name: Cache Nix Store
+        uses: nix-community/cache-nix-action@v7
+        with:
+          primary-key: nix-${{ runner.arch }}-${{ matrix.container }}-${{ hashFiles('flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.arch }}-${{ matrix.container }}-
 
       - name: Build ${{ matrix.container }} (${{ matrix.arch }}) image
         run: |
-          nix build ".#${{ matrix.container }}" --out-link "result-${{ matrix.container }}-${{ matrix.arch }}" -L
-          cp -L "result-${{ matrix.container }}-${{ matrix.arch }}" "result-${{ matrix.container }}-${{ matrix.arch }}.tar.gz"
+          nix build ".#${{ matrix.container }}" --out-link result -L
+          cp -L result "${{ matrix.arch }}.tar.gz"
 
       - name: Upload ${{ matrix.container }} (${{ matrix.arch }}) artifact
         uses: actions/upload-artifact@v7
         with:
           name: image-${{ matrix.container }}-${{ matrix.arch }}
-          path: result-${{ matrix.container }}-${{ matrix.arch }}.tar.gz
+          path: ${{ matrix.arch }}.tar.gz
           if-no-files-found: error
           retention-days: 1
 
   push-multiarch:
     name: Push ${{ matrix.container }} Image
     needs: [test, build]
+    if: needs.test.outputs.has_changes == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -108,7 +128,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - *cache-nix-store
+      - *cache-nix-ci
 
       - name: Download image artifacts
         uses: actions/download-artifact@v8
@@ -117,17 +137,13 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Get ${{ matrix.container }} version
-        id: version
-        run: echo "version=$(nix eval --raw ".#packages.${{ matrix.system }}.${{ matrix.container }}.imageTag")" >> "$GITHUB_OUTPUT"
-
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/${{ github.repository }}/${{ matrix.container }}
           tags: |
-            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ matrix.version }}
             type=ref,event=branch
             type=semver,pattern={{version}}
 
@@ -142,10 +158,10 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
-          ARCHES: ${{ join(matrix.arches, ' ') }}
+          DRVS_JSON: ${{ toJson(matrix.drvs) }}
         run: |
-          IMAGE_ARGS=()
-          for arch in $ARCHES; do
-            IMAGE_ARGS+=("linux/${arch}=artifacts/result-${{ matrix.container }}-${arch}.tar.gz")
+          ARGS=()
+          for tar in artifacts/*.tar.gz; do
+            ARGS+=("linux/$(basename "$tar" .tar.gz)=${tar}")
           done
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${IMAGE_ARGS[@]}"
+          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${ARGS[@]}"
