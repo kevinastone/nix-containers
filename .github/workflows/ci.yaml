@@ -55,7 +55,7 @@ jobs:
         run: nix flake check -L
 
       - name: Login to GHCR
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -64,7 +64,6 @@ jobs:
 
       - name: Discover changed containers
         id: discover
-        if: github.event_name != 'pull_request'
         run: |
           CI_JSON=$(nix eval --json .#lib.ci)
           nix run .#ci-matrix -- "ghcr.io/${{ github.repository }}" "$CI_JSON" --github-output "$GITHUB_OUTPUT" ${{ inputs.force && '--force' || '' }}
@@ -96,11 +95,14 @@ jobs:
           restore-prefixes-first-match: nix-${{ runner.arch }}-${{ matrix.container }}-
 
       - name: Build ${{ matrix.container }} (${{ matrix.arch }}) image
-        run: |
-          nix build ".#${{ matrix.container }}" --out-link result -L
-          cp -L result "${{ matrix.arch }}.tar.gz"
+        run: nix build ".#${{ matrix.container }}" --out-link result -L
+
+      - name: Prepare ${{ matrix.container }} (${{ matrix.arch }}) artifact
+        if: github.event_name != 'pull_request'
+        run: cp -L result "${{ matrix.arch }}.tar.gz"
 
       - name: Upload ${{ matrix.container }} (${{ matrix.arch }}) artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: image-${{ matrix.container }}-${{ matrix.arch }}
@@ -111,7 +113,7 @@ jobs:
   push-multiarch:
     name: Push ${{ matrix.container }} Image
     needs: [test, build]
-    if: needs.test.outputs.has_changes == 'true'
+    if: github.event_name != 'pull_request' && needs.test.outputs.has_changes == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
