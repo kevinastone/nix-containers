@@ -36,8 +36,11 @@ Once in the devShell, you can inspect the OCI container layers using the `dive-a
 dive-archive ./result
 ```
 
-### 4. Git Commits
-Do **not** commit any code changes using `git commit` without explicitly asking and obtaining confirmation from the user first.
+### 4. Version Control (`jj`)
+Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj status`, `jj diff`, `jj log`, `jj file list`).
+
+- **Commit Rule:** Always commit changes locally (e.g., `jj commit -m "..."`) after completing each task or step, once formatted with `nix fmt` and verified with relevant checks (`nix flake check`).
+- **Push Rule:** **Never** push to a remote (`jj git push` or `git push`) without explicit user consent. Always verify and ask the user before pushing changes.
 
 ---
 
@@ -73,5 +76,5 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 To add a new container (for example, `keycloak`):
 1. Create `nix/containers/<name>/default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels including `org.opencontainers.image.source` are enabled by default (`runAsNonRoot`, `includeCaCerts`, `includeTzdata`, and `enableShell` can all be toggled).
 2. Put any container-specific scripts or assets alongside it in `nix/containers/<name>/`.
-3. Stage new files with `git add` so Nix Flakes includes them in evaluation.
+3. Ensure new files are tracked by running `jj status` (Jujutsu automatically tracks new non-ignored files in the colocated Git index so Nix Flakes includes them in evaluation; use `git add` only if not using `jj`).
 4. Run `nix fmt` and `nix flake check`.
