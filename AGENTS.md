@@ -49,9 +49,13 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 - `flake.nix`: Entry point using `flake-parts` that wires up `nix/modules/`, `push-multiarch`, and `devShells.default`.
 - `nix/modules/`:
   - `container-tools/`:
-    - `default.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, `passthru.tests.{oci,restricted,structure}`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
-    - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
-    - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
+    - `default.nix`: `flake-parts` module exposing `overlays.default` (`pkgs.writeNuApplication` and `pkgs.containerTools`) and configuring `perSystem` `pkgs`.
+    - `oci.nix`: Pure OCI label and platform metadata helpers (`packageLicense`, `mkLabels`, `mkMeta`).
+    - `build-image.nix`: Wraps `pkgs.dockerTools` (`buildImage`/`buildLayeredImage`) with `nonRootNss`, default contents/shell, and test suite wiring.
+    - `tests/`:
+      - `default.nix`: Test suite wiring (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
+      - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
+      - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
