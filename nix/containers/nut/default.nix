@@ -5,11 +5,21 @@
   writeShellApplication,
 }:
 let
-  nutNss = containerTools.mkUserNss {
+  confDir = "/etc/nut";
+  stateDir = "/var/run/nut";
+
+  nutmon = {
     name = "nutmon";
     uid = 100;
     gid = 100;
-    home = "/var/run/nut";
+    home = stateDir;
+  };
+
+  nutNss = containerTools.mkUserNss nutmon;
+
+  nutStateDir = {
+    inherit (nutmon) uid gid;
+    mode = "0750";
   };
 
   nut-entrypoint = writeShellApplication {
@@ -27,27 +37,19 @@ containerTools.buildLayeredImage {
     nut-entrypoint
   ];
   dirs = {
-    "/etc/nut" = {
-      gid = 100;
+    ${confDir} = {
+      inherit (nutmon) gid;
       mode = "0750";
     };
-    "/var/run/nut" = {
-      uid = 100;
-      gid = 100;
-      mode = "0750";
-    };
-    "/var/state/ups" = {
-      uid = 100;
-      gid = 100;
-      mode = "0750";
-    };
+    ${stateDir} = nutStateDir;
+    "/var/state/ups" = nutStateDir;
   };
   config = {
     Entrypoint = [ (lib.getExe nut-entrypoint) ];
     Env = [
-      "NUT_CONFPATH=/etc/nut"
-      "NUT_STATEPATH=/var/run/nut"
-      "NUT_ALTPIDPATH=/var/run/nut"
+      "NUT_CONFPATH=${confDir}"
+      "NUT_STATEPATH=${stateDir}"
+      "NUT_ALTPIDPATH=${stateDir}"
     ];
     ExposedPorts = {
       "3493/tcp" = { };
