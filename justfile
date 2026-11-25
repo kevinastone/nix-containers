@@ -17,6 +17,10 @@ check:
 readme:
     nix run .#update-readme
 
+# Pin GitHub Actions to full commit SHAs
+pin:
+    pinact run .github/workflows/*.yaml .github/actions/*/*.yml
+
 # Scaffold a new container, track files, sync README.md, and format
 new name *args:
     new-container {{ name }} {{ args }}

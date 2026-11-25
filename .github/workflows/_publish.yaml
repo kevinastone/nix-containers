@@ -44,15 +44,16 @@ jobs:
       attestations: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
+          persist-credentials: false
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
       - name: Download image artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: image-${{ inputs.container }}-*
           path: artifacts
@@ -60,7 +61,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository }}/${{ inputs.container }}
           tags: |
@@ -69,15 +70,16 @@ jobs:
             type=semver,pattern={{version}},value=${{ inputs.version }}
 
       - name: Login to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: ⬆️ Push Image to GHCR
         id: push
         env:
+          IMAGE_REPO: ghcr.io/${{ github.repository }}/${{ inputs.container }}
           TAGS: ${{ steps.meta.outputs.tags }}
           SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
           DRVS_JSON: ${{ inputs.drvs_json }}
@@ -86,16 +88,18 @@ jobs:
           for tar in artifacts/*.tar.gz; do
             ARGS+=("linux/$(basename "$tar" .tar.gz)=${tar}")
           done
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ inputs.container }}" "${ARGS[@]}" --github-output "$GITHUB_OUTPUT"
+          nix run .#push-multiarch -- "$IMAGE_REPO" "${ARGS[@]}" --github-output "$GITHUB_OUTPUT"
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.4
+        uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
 
       - name: Sign multi-arch OCI index
-        run: cosign sign --yes "${{ steps.push.outputs.repo }}@${{ steps.push.outputs.digest }}"
+        env:
+          IMAGE_REF: ${{ steps.push.outputs.repo }}@${{ steps.push.outputs.digest }}
+        run: cosign sign --yes "$IMAGE_REF"
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-name: ${{ steps.push.outputs.repo }}
           subject-digest: ${{ steps.push.outputs.digest }}

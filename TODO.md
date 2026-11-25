@@ -25,9 +25,9 @@ Tracked tooling, PR testing improvements, and architectural optimizations to mak
 - [x] **PR-gated `flake.lock` updates with `nvd` changelogs**: Updated `.github/workflows/update-flake.yaml` (backed by `passthru.closure` in `build-image.nix` and `nix/modules/scripts/flake-update-report.nu`) to open/update a `chore/update-flake-lock` PR with per-container version + `nvd` runtime closure diffs and validate changed containers via multi-arch `_build.yaml` builds/smoke tests instead of pushing directly to `main`.
 - [x] **Deduplicated Nix CI binary caching (`magic-nix-cache-action`)**: Switched `.github/actions/setup-nix/action.yml` from monolithic `cache-nix-action` `/nix/store` tarballs to `DeterminateSystems/magic-nix-cache-action@v15` for per-NAR deduplication across jobs and automatic skipping of `cache.nixos.org` paths.
 - [ ] **Workflow & supply-chain security gates (`zizmor`, `pinact`, `sbomnix` + `grype`/`vulnix`)**:
-  - Add `zizmor` (GitHub Actions security linter) and `typos` to `nix/modules/treefmt.nix`, pin Actions to full commit SHAs (`pinact`), and group `.github/dependabot.yml` PRs.
-  - Generate Nix-native SBOMs (`sbomnix` or `syft`) for `actions/attest-sbom` and scan them with `grype` or `vulnix` on PRs (since standard scanners miss packages in dpkg/apk-less Nix images).
-  - Add scheduled GHCR retention cleanup for untagged/superseded `:main` manifests while preserving semver tags and Sigstore referrers.
+  - [x] Added `zizmor` and `typos` to `nix/modules/treefmt.nix`, pinned all GitHub Actions to full commit SHAs (`pinact`), hardened workflows (`persist-credentials: false`, `env:` template bindings, dropped `secrets: inherit`), and grouped `.github/dependabot.yml` PRs with a 7-day cooldown.
+  - [ ] Generate Nix-native SBOMs (`sbomnix` or `syft`) for `actions/attest-sbom` and scan them with `grype` or `vulnix` on PRs (since standard scanners miss packages in dpkg/apk-less Nix images).
+  - [ ] Add scheduled GHCR retention cleanup for untagged/superseded `:main` manifests while preserving semver tags and Sigstore referrers.
 
 ---
 

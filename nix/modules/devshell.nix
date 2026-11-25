@@ -23,9 +23,11 @@
             nix-tree
             nushell
             nvd
+            pinact
             regctl
             skopeo
             update-readme
+            zizmor
             # keep-sorted end
           ];
       };

@@ -23,6 +23,7 @@
           simplify = true;
         };
         programs.shellcheck.enable = true;
+        programs.typos.enable = true;
         settings.global.excludes = [ ".envrc" ];
         settings.formatter = {
           deadnix.priority = 1;
@@ -31,6 +32,24 @@
           shellcheck.priority = 1;
           shfmt.priority = 2;
           actionlint.priority = 1;
+          zizmor = {
+            command = pkgs.lib.getExe pkgs.zizmor;
+            options = [
+              "--offline"
+              "--config"
+              "${pkgs.writers.writeYAML "zizmor.yml" {
+                rules.self-repository.disable = true;
+              }}"
+            ];
+            includes = [
+              ".github/dependabot.yml"
+              ".github/workflows/*.yml"
+              ".github/workflows/*.yaml"
+              ".github/actions/**/*.yml"
+              ".github/actions/**/*.yaml"
+            ];
+            priority = 1;
+          };
           yamlfmt.priority = 2;
           nufmt = {
             command = pkgs.lib.getExe pkgs.nufmt;
