@@ -47,7 +47,7 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 - `nix/modules/`:
   - `container-tools.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers` and `flake.lib.ci.{build,push}`.
-  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`).
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.

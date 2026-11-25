@@ -17,16 +17,16 @@ if [ -z "$TOTAL_US" ]; then
 fi
 
 while read -r line; do
-  if [[ "$line" == out_time_us=* ]]; then
+  if [[ $line == out_time_us=* ]]; then
     TIME_US="${line#out_time_us=}"
-    if [ -n "$PROGRESS_FILE" ] && [ "$TOTAL_US" -gt 0 ] && [[ "$TIME_US" =~ ^[0-9]+$ ]]; then
+    if [ -n "$PROGRESS_FILE" ] && [ "$TOTAL_US" -gt 0 ] && [[ $TIME_US =~ ^[0-9]+$ ]]; then
       # Calculate progress percentage (0-100)
-      PERCENT=$(( TIME_US * 100 / TOTAL_US ))
+      PERCENT=$((TIME_US * 100 / TOTAL_US))
       # Clamp to 100 just in case time slightly exceeds due to container differences
       if [ "$PERCENT" -gt 100 ]; then
         PERCENT=100
       fi
-      echo "$PERCENT/100" > "$PROGRESS_FILE"
+      echo "$PERCENT/100" >"$PROGRESS_FILE"
     fi
   fi
 done
