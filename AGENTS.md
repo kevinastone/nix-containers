@@ -48,7 +48,7 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
   - `container-tools/`:
     - `default.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, `passthru.tests`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
     - `smoke-test.nu`: Nushell runner wrapped by `containerTools.ociTest` / `containerTools.structureTest` (attached via `passthru.tests`).
-  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers` and `flake.lib.ci.{build,push}`.
+  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
@@ -61,7 +61,9 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
   - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
   - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`).
 - `.github/workflows/`:
-  - `ci.yaml`: CI/CD pipeline that validates the flake, auto-discovers containers from `flake.nix`, builds images for `amd64`/`arm64`, and publishes them to `ghcr.io/${{ github.repository }}/<container>`.
+  - `ci.yaml`: Top-level CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out an independent pipeline per changed container.
+  - `container.yaml`: Reusable per-container workflow that builds and smoke-tests supported architectures (`amd64`/`arm64`) and immediately publishes, signs, and attests the multi-arch OCI index on GHCR.
+  - `update-flake.yaml`: Weekly scheduled workflow to update `flake.lock` and trigger `ci.yaml`.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).
 
 ---

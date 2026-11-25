@@ -29,8 +29,7 @@ jobs:
       contents: read
       packages: read
     outputs:
-      build_matrix: ${{ steps.discover.outputs.build_matrix }}
-      push_matrix: ${{ steps.discover.outputs.push_matrix }}
+      matrix: ${{ steps.discover.outputs.matrix }}
       has_changes: ${{ steps.discover.outputs.has_changes }}
     steps:
       - name: Checkout
@@ -43,8 +42,7 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - &cache-nix-ci
-        name: Cache Nix Store
+      - name: Cache Nix Store
         uses: nix-community/cache-nix-action@v7
         with:
           primary-key: nix-${{ runner.arch }}-ci-${{ hashFiles('flake.lock') }}
@@ -67,124 +65,24 @@ jobs:
           CI_JSON=$(nix eval --json .#lib.ci)
           nix run .#ci-matrix -- "ghcr.io/${{ github.repository }}" "$CI_JSON" --github-output "$GITHUB_OUTPUT" ${{ inputs.force && '--force' || '' }}
 
-  build:
-    name: Build ${{ matrix.container }} (${{ matrix.arch }})
+  container:
+    name: ${{ matrix.container }}
     needs: [test]
     if: needs.test.outputs.has_changes == 'true'
-    runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.test.outputs.build_matrix) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache Nix Store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.arch }}-${{ matrix.container }}-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.arch }}-${{ matrix.container }}-
-
-      - name: Build ${{ matrix.container }} (${{ matrix.arch }}) image
-        run: nix build ".#${{ matrix.container }}" --out-link result -L
-
-      - name: Smoke test ${{ matrix.container }} (${{ matrix.arch }})
-        run: nix run ".#${{ matrix.container }}.test" -- result
-
-      - name: Prepare ${{ matrix.container }} (${{ matrix.arch }}) artifact
-        if: github.event_name != 'pull_request'
-        run: cp -L result "${{ matrix.arch }}.tar.gz"
-
-      - name: Upload ${{ matrix.container }} (${{ matrix.arch }}) artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v7
-        with:
-          name: image-${{ matrix.container }}-${{ matrix.arch }}
-          path: ${{ matrix.arch }}.tar.gz
-          if-no-files-found: error
-          retention-days: 1
-
-  push-multiarch:
-    name: Push ${{ matrix.container }} Image
-    needs: [test, build]
-    if: github.event_name != 'pull_request' && needs.test.outputs.has_changes == 'true'
-    runs-on: ubuntu-24.04
+        include: ${{ fromJson(needs.test.outputs.matrix) }}
     permissions:
       contents: read
       packages: write
       id-token: write
       attestations: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.test.outputs.push_matrix) }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ inputs.ref }}
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - *cache-nix-ci
-
-      - name: Download image artifacts
-        uses: actions/download-artifact@v8
-        with:
-          pattern: image-${{ matrix.container }}-*
-          path: artifacts
-          merge-multiple: true
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}/${{ matrix.container }}
-          tags: |
-            type=raw,value=${{ matrix.version }}
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-
-      - name: Login to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: ⬆️ Push Image to GHCR
-        id: push
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
-          DRVS_JSON: ${{ toJson(matrix.drvs) }}
-        run: |
-          ARGS=()
-          for tar in artifacts/*.tar.gz; do
-            ARGS+=("linux/$(basename "$tar" .tar.gz)=${tar}")
-          done
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${ARGS[@]}" --github-output "$GITHUB_OUTPUT"
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Sign multi-arch OCI index
-        run: cosign sign --yes "${{ steps.push.outputs.repo }}@${{ steps.push.outputs.digest }}"
-
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ steps.push.outputs.repo }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+    uses: ./.github/workflows/container.yaml
+    with:
+      ref: ${{ inputs.ref }}
+      container: ${{ matrix.container }}
+      version: ${{ matrix.version }}
+      arches_json: ${{ toJson(matrix.arches) }}
+      drvs_json: ${{ toJson(matrix.drvs) }}
+    secrets: inherit

@@ -10,7 +10,7 @@ def remote-annotations [ref: string]: nothing -> record {
     }
 }
 
-# Filter the Nix CI build/push matrices to only containers whose Nix drvPaths changed vs the registry.
+# Filter the Nix CI container list to only containers whose Nix drvPaths changed vs the registry.
 def main [
     repo: string # Base registry repository prefix (e.g. ghcr.io/owner/repo)
     ci_json: string # JSON output of `nix eval --json .#lib.ci`
@@ -19,15 +19,15 @@ def main [
     --force # Include all containers regardless of registry state
 ] {
     let repo = $repo | str lowercase
-    let ci = $ci_json | from json
+    let entries = $ci_json | from json
 
-    let push = (
-        $ci.push
+    let changed = (
+        $entries
         | par-each {|entry|
             let unchanged = if $force {
                 false
             } else {
-                let remote = remote-annotations $"($repo)/($entry.container):($tag)"
+                let remote = (remote-annotations $"($repo)/($entry.container):($tag)")
                 $entry.drvs
                 | transpose arch drv
                 | all {|it| ($remote | get -o $"dev.nix-containers.drv.($it.arch)") == $it.drv }
@@ -43,17 +43,14 @@ def main [
         | compact
     )
 
-    let changed = $push | get container
     let result = {
-        build: ($ci.build | where container in $changed)
-        push: $push
-        has_changes: ($push | is-not-empty)
+        matrix: $changed
+        has_changes: ($changed | is-not-empty)
     }
 
     if $github_output != null {
         [
-            $"build_matrix=($result.build | to json -r)"
-            $"push_matrix=($result.push | to json -r)"
+            $"matrix=($result.matrix | to json -r)"
             $"has_changes=($result.has_changes)"
         ]
         | str join "\n"

@@ -59,33 +59,24 @@ in
   flake.lib = {
     containers = containerNames;
     inherit catalog;
-    ci = {
-      build = builtins.concatMap (
-        container:
-        map (a: {
-          inherit container;
-          inherit (a) arch runs-on;
-        }) (containerArches container)
-      ) containerNames;
-
-      push = map (
-        container:
-        let
-          arches = containerArches container;
-          firstSystem = (builtins.head arches).system;
-        in
-        {
-          inherit container;
-          version = config.flake.packages.${firstSystem}.${container}.imageTag;
-          drvs = builtins.listToAttrs (
-            map (a: {
-              name = a.arch;
-              value = builtins.unsafeDiscardStringContext config.flake.packages.${a.system}.${container}.drvPath;
-            }) arches
-          );
-        }
-      ) activeContainers;
-    };
+    ci = map (
+      container:
+      let
+        arches = containerArches container;
+        firstSystem = (builtins.head arches).system;
+      in
+      {
+        inherit container;
+        version = config.flake.packages.${firstSystem}.${container}.imageTag;
+        arches = map (a: { inherit (a) arch runs-on; }) arches;
+        drvs = builtins.listToAttrs (
+          map (a: {
+            name = a.arch;
+            value = builtins.unsafeDiscardStringContext config.flake.packages.${a.system}.${container}.drvPath;
+          }) arches
+        );
+      }
+    ) activeContainers;
   };
 
   perSystem =
