@@ -7,16 +7,14 @@ on:
     - cron: "0 0 * * 1" # Weekly on Monday at 00:00 UTC
 
 permissions:
-  contents: write
-  packages: write
-  pull-requests: write
-  id-token: write
-  actions: write
+  contents: read
 
 jobs:
   update-flake:
     name: Update Nix Flake Inputs
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     outputs:
       updated: ${{ steps.commit.outputs.updated }}
       sha: ${{ steps.commit.outputs.sha }}
@@ -64,6 +62,9 @@ jobs:
     name: Build & Publish Updated Images
     needs: [update-flake]
     if: needs.update-flake.outputs.updated == 'true'
+    permissions:
+      contents: read
+      packages: write
     uses: ./.github/workflows/ci.yaml
     with:
       ref: ${{ needs.update-flake.outputs.sha }}

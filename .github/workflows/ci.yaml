@@ -19,16 +19,15 @@ on:
         default: ""
 
 permissions:
-  contents: write
-  packages: write
-  pull-requests: write
-  id-token: write
-  actions: write
+  contents: read
 
 jobs:
   test:
     name: Test
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
     outputs:
       build_matrix: ${{ steps.discover.outputs.build_matrix }}
       push_matrix: ${{ steps.discover.outputs.push_matrix }}
@@ -115,6 +114,9 @@ jobs:
     needs: [test, build]
     if: github.event_name != 'pull_request' && needs.test.outputs.has_changes == 'true'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     strategy:
       fail-fast: false
       matrix:

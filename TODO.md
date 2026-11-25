@@ -23,7 +23,7 @@ Tracked ideas and recommended improvements as `nix-containers` grows into a gene
 ## 🤖 CI/CD & Supply-Chain Security
 
 - [x] **Build changed containers on Pull Requests**: Currently PRs only run `nix flake check` (`treefmt`) and skip `build`, so broken container derivations aren't caught until merge to `main`. Run `ci-matrix` + `build` on PRs while keeping `push-multiarch` gated to `main`.
-- [ ] **Scope GitHub Actions `permissions` per job**: Tighten workflow-level permissions in `ci.yaml` and `update-flake.yaml` to `contents: read`, granting `packages: write` (and `id-token: write`) only on the jobs that actually publish or push commits.
+- [x] **Scope GitHub Actions `permissions` per job**: Tighten workflow-level permissions in `ci.yaml` and `update-flake.yaml` to `contents: read`, granting `packages: write` (and `id-token: write`) only on the jobs that actually publish or push commits.
 - [ ] **Keyless image signing (`cosign`) & attestations**: Sign published multi-arch OCI index digests using Sigstore `cosign` with GitHub OIDC (`id-token: write`), and consider attaching SBOMs (`sbomnix` / `syft`) or SLSA build provenance.
 - [ ] **Richer tagging options**: Decide whether `:latest` should be published alongside `:main` and `:<version>`, and allow containers to opt into extra tag aliases (e.g., major/minor semver or flavor tags) via `passthru` metadata.
 
