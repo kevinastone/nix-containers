@@ -64,10 +64,12 @@ in
       let
         arches = containerArches container;
         firstSystem = (builtins.head arches).system;
+        drv = config.flake.packages.${firstSystem}.${container};
       in
       {
         inherit container;
-        version = config.flake.packages.${firstSystem}.${container}.imageTag;
+        version = drv.imageTag;
+        extraTags = drv.extraTags or [ ];
         arches = map (a: { inherit (a) arch runs-on; }) arches;
         drvs = builtins.listToAttrs (
           map (a: {

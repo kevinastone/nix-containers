@@ -111,6 +111,11 @@ let
           default = if config.package != null then packageLicense config.package else null;
           description = "SPDX license expression for org.opencontainers.image.licenses.";
         };
+        extraTags = mkOption {
+          type = types.listOf (types.strMatching "^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$");
+          default = [ ];
+          description = "Additional OCI image tags published alongside version and semver tags.";
+        };
         runAsNonRoot = mkOption {
           type = types.bool;
           default = true;

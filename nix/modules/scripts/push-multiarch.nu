@@ -33,7 +33,9 @@ def main [
     repo: string # Target registry repository (e.g. ghcr.io/owner/repo/image)
     ...images: string # One or more <platform>=<image-tar> specs
     --tags: string # Newline-separated tags to publish (defaults to $env.TAGS)
+    --extra-tags-json: string # Optional JSON list of extra tag names (defaults to $env.EXTRA_TAGS_JSON)
     --source-url: string # OCI org.opencontainers.image.source annotation (defaults to $env.SOURCE_URL)
+    --revision: string # OCI org.opencontainers.image.revision annotation (defaults to $env.REVISION)
     --drvs-json: string # JSON map of <arch> -> Nix drvPath (defaults to $env.DRVS_JSON)
     --github-output: path # Optional $GITHUB_OUTPUT file path (writes repo and digest)
 ] {
@@ -42,18 +44,28 @@ def main [
     }
 
     let repo = $repo | str lowercase
+    let raw_extra_tags = $extra_tags_json | default ($env.EXTRA_TAGS_JSON? | default "")
+    let extra_tag_refs = if $raw_extra_tags == "" {
+        []
+    } else {
+        $raw_extra_tags | from json | each { $"($repo):($in)" }
+    }
+
     let resolved_tags = (
         $tags
         | default ($env.TAGS? | default "")
         | lines
         | each { str trim }
         | where { $in != "" }
+        | append $extra_tag_refs
+        | uniq
     )
     if ($resolved_tags | is-empty) {
         error make {msg: "No tags provided (pass --tags or set TAGS)"}
     }
 
     let source = $source_url | default ($env.SOURCE_URL? | default "")
+    let rev = $revision | default ($env.REVISION? | default "")
     let raw_drvs = $drvs_json | default ($env.DRVS_JSON? | default "")
     let drvs = if $raw_drvs == "" {
         {}
@@ -87,6 +99,7 @@ def main [
             $base_annotations
             | merge $drv_annotations
             | if ($source != "") { upsert "org.opencontainers.image.source" $source } else { $in }
+            | if ($rev != "") { upsert "org.opencontainers.image.revision" $rev } else { $in }
             | transpose k v
             | each { [--annotation $"($in.k)=($in.v)"] }
             | flatten

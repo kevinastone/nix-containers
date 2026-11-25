@@ -13,6 +13,9 @@ on:
       version:
         type: string
         required: true
+      extra_tags_json:
+        type: string
+        default: "[]"
       arches_json:
         type: string
         required: true
@@ -68,6 +71,8 @@ jobs:
             type=raw,value=${{ inputs.version }}
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}},value=${{ inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
+            type=semver,pattern={{major}},value=${{ inputs.version }},enable=${{ !startsWith(inputs.version, '0.') }}
 
       - name: Login to GHCR
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -81,7 +86,9 @@ jobs:
         env:
           IMAGE_REPO: ghcr.io/${{ github.repository }}/${{ inputs.container }}
           TAGS: ${{ steps.meta.outputs.tags }}
+          EXTRA_TAGS_JSON: ${{ inputs.extra_tags_json }}
           SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+          REVISION: ${{ github.sha }}
           DRVS_JSON: ${{ inputs.drvs_json }}
         run: |
           ARGS=()

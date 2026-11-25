@@ -47,6 +47,7 @@
             description
             source
             licenses
+            extraTags
             runAsNonRoot
             user
             includeCaCerts
@@ -209,7 +210,13 @@
         in
         (dockerTools.buildLayeredImage builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // oci.mkMeta { inherit package description; } // meta;
-          passthru = (old.passthru or { }) // passthru // { inherit closure; } // testSuite;
+          passthru =
+            (old.passthru or { })
+            // passthru
+            // {
+              inherit closure extraTags;
+            }
+            // testSuite;
         });
     in
     {

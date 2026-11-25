@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: update-flake
+  cancel-in-progress: true
+
 jobs:
   update-flake:
     name: Update Nix Flake Inputs

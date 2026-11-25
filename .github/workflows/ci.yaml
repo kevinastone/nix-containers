@@ -21,6 +21,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: Test
@@ -99,5 +103,6 @@ jobs:
       ref: ${{ inputs.ref }}
       container: ${{ matrix.container }}
       version: ${{ matrix.version }}
+      extra_tags_json: ${{ toJson(matrix.extraTags) }}
       arches_json: ${{ toJson(matrix.arches) }}
       drvs_json: ${{ toJson(matrix.drvs) }}
