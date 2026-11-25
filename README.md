@@ -94,7 +94,7 @@ spec:
 3. Run `nix fmt` and `nix flake check`.
 4. Test building locally with `nix build .#<name>`.
 
-`nix/containers/default.nix` automatically discovers all subdirectories containing a `default.nix`, exposes them as flake packages, and registers them in `lib.<system>.containers` for GitHub Actions.
+`nix/containers/default.nix` automatically discovers all subdirectories containing a `default.nix`, exposes them as flake packages, and registers them in `lib.containers` for GitHub Actions.
 
 ---
 
@@ -140,7 +140,7 @@ nix fmt
 
 The GitHub Actions workflow defined in [.github/workflows/ci.yaml](.github/workflows/ci.yaml) automates validation and deployment:
 
-1. **Linting & Discovery**: Runs `nix flake check` and evaluates `.#lib.x86_64-linux.containers` to discover all container targets.
+1. **Linting & Discovery**: Runs `nix flake check` and evaluates `.#lib.ci.build` and `.#lib.ci.push` to compute the container and architecture matrix from each container's `meta.platforms`.
 2. **Build Matrix**: Spawns `amd64` and `arm64` runners for each discovered container.
 3. **Upstream Tagging**: Extracts each container's `.imageTag` directly from Nix to tag the published image alongside the branch tag.
 4. **Multi-Arch Push**: Combines architecture builds into a multi-arch manifest using `push-multiarch` and publishes to `ghcr.io/<owner>/<repo>/<container>`.

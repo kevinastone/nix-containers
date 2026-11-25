@@ -24,7 +24,8 @@ jobs:
     name: Test
     runs-on: ubuntu-24.04
     outputs:
-      containers: ${{ steps.discover.outputs.containers }}
+      build_matrix: ${{ steps.discover.outputs.build_matrix }}
+      push_matrix: ${{ steps.discover.outputs.push_matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -47,7 +48,9 @@ jobs:
 
       - name: Discover containers
         id: discover
-        run: echo "containers=$(nix eval --json .#lib.x86_64-linux.containers | jq -c)" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "build_matrix=$(nix eval --json .#lib.ci.build | jq -c)" >> "$GITHUB_OUTPUT"
+          echo "push_matrix=$(nix eval --json .#lib.ci.push | jq -c)" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build ${{ matrix.container }} (${{ matrix.arch }})
@@ -56,13 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container: ${{ fromJson(needs.test.outputs.containers) }}
-        arch: [amd64, arm64]
-        include:
-          - arch: amd64
-            runs-on: ubuntu-24.04
-          - arch: arm64
-            runs-on: ubuntu-24.04-arm
+        include: ${{ fromJson(needs.test.outputs.build_matrix) }}
     if: |
       (github.event_name == 'push' && (github.ref == 'refs/heads/main')) ||
       github.event_name == 'workflow_call'
@@ -93,13 +90,13 @@ jobs:
           retention-days: 1
 
   push-multiarch:
-    name: Push ${{ matrix.container }} Multi-Arch Image
+    name: Push ${{ matrix.container }} Image
     needs: [test, build]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        container: ${{ fromJson(needs.test.outputs.containers) }}
+        include: ${{ fromJson(needs.test.outputs.push_matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -113,21 +110,16 @@ jobs:
 
       - *cache-nix-store
 
-      - name: Download AMD64 artifact
+      - name: Download image artifacts
         uses: actions/download-artifact@v8
         with:
-          name: image-${{ matrix.container }}-amd64
-          path: artifacts-amd64
-
-      - name: Download ARM64 artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: image-${{ matrix.container }}-arm64
-          path: artifacts-arm64
+          pattern: image-${{ matrix.container }}-*
+          path: artifacts
+          merge-multiple: true
 
       - name: Get ${{ matrix.container }} version
         id: version
-        run: echo "version=$(nix eval --raw ".#${{ matrix.container }}.imageTag")" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(nix eval --raw ".#packages.${{ matrix.system }}.${{ matrix.container }}.imageTag")" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
@@ -146,9 +138,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: ⬆️ Push Multi-Arch Image to GHCR
+      - name: ⬆️ Push Image to GHCR
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+          ARCHES: ${{ join(matrix.arches, ' ') }}
         run: |
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "artifacts-amd64/result-${{ matrix.container }}-amd64.tar.gz" "artifacts-arm64/result-${{ matrix.container }}-arm64.tar.gz"
+          IMAGE_ARGS=()
+          for arch in $ARCHES; do
+            IMAGE_ARGS+=("linux/${arch}=artifacts/result-${{ matrix.container }}-${arch}.tar.gz")
+          done
+          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${IMAGE_ARGS[@]}"

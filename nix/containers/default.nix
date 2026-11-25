@@ -1,11 +1,10 @@
-{ pkgs, containerTools }:
-let
-  inherit (pkgs) lib;
-  entries = builtins.readDir ./.;
-  containerDirs = lib.filterAttrs (
-    name: type: type == "directory" && builtins.pathExists (./. + "/${name}/default.nix")
-  ) entries;
-in
-lib.mapAttrs (
-  name: _: pkgs.callPackage (./. + "/${name}") { inherit containerTools; }
-) containerDirs
+{
+  pkgs,
+  containerTools,
+  names ? builtins.attrNames (
+    pkgs.lib.filterAttrs (
+      name: type: type == "directory" && builtins.pathExists (./. + "/${name}/default.nix")
+    ) (builtins.readDir ./.)
+  ),
+}:
+pkgs.lib.genAttrs names (name: pkgs.callPackage (./. + "/${name}") { inherit containerTools; })

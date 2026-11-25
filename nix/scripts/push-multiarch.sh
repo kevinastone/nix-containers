@@ -1,32 +1,43 @@
 #!/bin/bash
-if [ "$#" -lt 3 ]; then
-  echo "Usage: push-multiarch <registry-repo> <amd64-image-tar> <arm64-image-tar>"
+if [ "$#" -lt 2 ]; then
+  echo "Usage: push-multiarch <registry-repo> <platform>=<image-tar> [<platform>=<image-tar> ...]"
   exit 1
 fi
 
 REPO=$(echo "$1" | tr '[:upper:]' '[:lower:]')
-AMD64_IMAGE="$2"
-ARM64_IMAGE="$3"
+shift
 
 if [ -z "${TAGS:-}" ]; then
   echo "Error: TAGS environment variable is not set"
   exit 1
 fi
 
-# Import images into local OCI layout directories directly from Nix build outputs
-regctl image import ocidir://./local-oci-amd64 "$AMD64_IMAGE"
-regctl image import ocidir://./local-oci-arm64 "$ARM64_IMAGE"
+TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-# Get the digests of the imported OCI layouts
-AMD64_DIGEST=$(regctl image digest ocidir://./local-oci-amd64)
-ARM64_DIGEST=$(regctl image digest ocidir://./local-oci-arm64)
+INDEX_REF_ARGS=()
+i=0
+for spec in "$@"; do
+  PLATFORM="${spec%%=*}"
+  IMAGE_TAR="${spec#*=}"
+  if [ "$PLATFORM" = "$spec" ] || [ -z "$PLATFORM" ] || [ -z "$IMAGE_TAR" ]; then
+    echo "Error: Invalid image spec '$spec' (expected <platform>=<image-tar>)"
+    exit 1
+  fi
 
-# Push single-architecture layers and manifests by digest
-echo "Pushing AMD64 digest: $AMD64_DIGEST to $REPO..."
-regctl image copy ocidir://./local-oci-amd64 "$REPO@$AMD64_DIGEST"
+  OCI_DIR="$TMP_DIR/oci-$i"
+  i=$((i + 1))
 
-echo "Pushing ARM64 digest: $ARM64_DIGEST to $REPO..."
-regctl image copy ocidir://./local-oci-arm64 "$REPO@$ARM64_DIGEST"
+  # Import image into a local OCI layout directory directly from the Nix build output
+  regctl image import "ocidir://$OCI_DIR" "$IMAGE_TAR"
+  DIGEST=$(regctl image digest "ocidir://$OCI_DIR")
+
+  # Push single-architecture layers and manifest by digest
+  echo "Pushing $PLATFORM digest: $DIGEST to $REPO..."
+  regctl image copy "ocidir://$OCI_DIR" "$REPO@$DIGEST"
+
+  INDEX_REF_ARGS+=(--ref "$REPO@$DIGEST" --platform "$PLATFORM")
+done
 
 ANNOTATION_ARGS=()
 if [ -n "${SOURCE_URL:-}" ]; then
@@ -37,15 +48,9 @@ fi
 # Since TAGS is multiline, we read it line by line
 echo "$TAGS" | while read -r tag || [ -n "$tag" ]; do
   if [ -n "$tag" ]; then
-    echo "Creating and pushing multi-arch index for $tag..."
+    echo "Creating and pushing OCI index for $tag..."
     regctl index create "$tag" \
       "${ANNOTATION_ARGS[@]}" \
-      --ref "$REPO@$AMD64_DIGEST" \
-      --platform linux/amd64 \
-      --ref "$REPO@$ARM64_DIGEST" \
-      --platform linux/arm64
+      "${INDEX_REF_ARGS[@]}"
   fi
 done
-
-# Cleanup local OCI layouts
-rm -rf ./local-oci-amd64 ./local-oci-arm64

@@ -24,6 +24,7 @@ let
       source ? defaultSource,
       licenses ? "MIT",
       config ? { },
+      meta ? { },
       ...
     }@args:
     let
@@ -48,6 +49,17 @@ let
           Labels = defaultLabels // (config.Labels or { });
         };
 
+      defaultMeta = {
+        platforms =
+          if package != null && (package.meta ? platforms) then
+            lib.intersectLists lib.platforms.linux package.meta.platforms
+          else
+            lib.platforms.linux;
+      }
+      // lib.optionalAttrs (description != null) {
+        inherit description;
+      };
+
       existingContents = lib.toList (args.${contentsAttr} or [ ]);
       mergedContents =
         if package != null && !(builtins.elem package existingContents) then
@@ -62,6 +74,7 @@ let
           "source"
           "licenses"
           "config"
+          "meta"
           contentsAttr
         ])
         // {
@@ -72,7 +85,9 @@ let
           ${contentsAttr} = mergedContents;
         };
     in
-    builder builderArgs;
+    (builder builderArgs).overrideAttrs (old: {
+      meta = (old.meta or { }) // defaultMeta // meta;
+    });
 in
 dockerTools
 // {
