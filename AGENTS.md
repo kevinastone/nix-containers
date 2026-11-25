@@ -46,7 +46,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 
 ## 📁 Repository Structure
 
-- `flake.nix`: Entry point using `flake-parts` that wires up `nix/modules/`, `push-multiarch`, and `devShells.default`.
+- `flake.nix`: Entry point using `flake-parts` that imports `nix/modules/*`.
 - `nix/modules/`:
   - `container-tools/`:
     - `default.nix`: `flake-parts` module exposing `overlays.default` (`pkgs.writeNuApplication` and `pkgs.containerTools`) and configuring `perSystem` `pkgs`.
@@ -57,17 +57,18 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
       - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
       - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
+  - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
+  - `scripts/`:
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`) and `checks.readme-catalog`.
+    - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
+    - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
+    - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
     - `structure-test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
-- `nix/scripts/`:
-  - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
-  - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
-  - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
-  - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`).
 - `.github/workflows/`:
   - `ci.yaml`: Top-level CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only builds on PRs (`_build.yaml`) or full build-and-publish pipelines on non-PR runs (`_publish.yaml`).
   - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
