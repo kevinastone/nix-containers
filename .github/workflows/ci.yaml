@@ -6,6 +6,11 @@ on:
     branches:
       - main
   pull_request:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -23,6 +28,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -57,10 +64,13 @@ jobs:
           - arch: arm64
             runs-on: ubuntu-24.04-arm
     if: |
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main'))
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main')) ||
+      github.event_name == 'workflow_call'
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -93,6 +103,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31

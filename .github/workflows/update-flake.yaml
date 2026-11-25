@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Update flake.lock
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1" # Weekly on Monday at 00:00 UTC
+
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+  id-token: write
+  actions: write
+
+jobs:
+  update-flake:
+    name: Update Nix Flake Inputs
+    runs-on: ubuntu-24.04
+    outputs:
+      updated: ${{ steps.commit.outputs.updated }}
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update flake.lock
+        run: nix flake update
+
+      - name: Check for changes and push to main
+        id: commit
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "No flake.lock updates available."
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          nix flake check -L
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock
+          git commit -m "chore(deps): update flake.lock"
+          git push origin main
+
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  ci:
+    name: Build & Publish Updated Images
+    needs: [update-flake]
+    if: needs.update-flake.outputs.updated == 'true'
+    uses: ./.github/workflows/ci.yaml
+    with:
+      ref: ${{ needs.update-flake.outputs.sha }}
+    secrets: inherit
