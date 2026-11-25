@@ -49,5 +49,5 @@ containerTools.buildLayeredImage {
       "9000/tcp" = { };
     };
   };
-  passthru.tests.structure = containerTools.structureTest ./test.yaml;
+  structureTest = ./test.yaml;
 }

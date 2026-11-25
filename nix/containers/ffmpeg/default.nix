@@ -21,5 +21,5 @@ containerTools.buildLayeredImage {
     jq
     argo-ffmpeg-progress
   ];
-  passthru.tests.structure = containerTools.structureTest ./test.yaml;
+  structureTest = ./test.yaml;
 }

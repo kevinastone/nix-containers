@@ -7,7 +7,9 @@ let
       lib,
       dockerTools,
       writers,
-      writeShellApplication,
+      writeText,
+      runCommand,
+      makeWrapper,
       bash,
       coreutils,
       tzdata,
@@ -19,28 +21,42 @@ let
         extraGroupLines = [ "nonroot:x:65532:" ];
       };
 
-      mkSmokeTest =
-        name: extraArgs:
-        writers.writeNuBin name {
-          makeWrapperArgs = [
-            "--prefix"
-            "PATH"
-            ":"
-            (lib.makeBinPath [ container-structure-test ])
-          ]
-          ++ extraArgs;
-        } (builtins.readFile ./smoke-test.nu);
+      mkNuTest =
+        name: runtimeInputs: extraArgs: file:
+        writers.writeNuBin name (lib.optionalAttrs (runtimeInputs != [ ] || extraArgs != [ ]) {
+          makeWrapperArgs =
+            (lib.optionals (runtimeInputs != [ ]) [
+              "--prefix"
+              "PATH"
+              ":"
+              (lib.makeBinPath runtimeInputs)
+            ])
+            ++ extraArgs;
+        }) (builtins.readFile file);
 
-      ociTest = mkSmokeTest "oci-test" [ ];
+      testRunner = mkNuTest "run-container-tests" [ ] [ ] ./run-tests.nu;
+      ociTest = mkNuTest "oci-test" [ ] [ ] ./test-oci.nu;
 
-      structureTest =
+      mkStructureTest =
         config:
-        mkSmokeTest "structure-test" [
+        mkNuTest "structure-test"
+          [ container-structure-test ]
+          [
+            "--add-flags"
+            "--config"
+            "--add-flags"
+            "${config}"
+          ]
+          ./test-structure.nu;
+
+      mkRestrictedTest =
+        config:
+        mkNuTest "restricted-test" [ ] (lib.optionals (config != null) [
           "--add-flags"
           "--config"
           "--add-flags"
           "${config}"
-        ];
+        ]) ./test-restricted.nu;
 
       packageLicense =
         pkg:
@@ -74,6 +90,7 @@ let
           includeCaCerts ? true,
           includeTzdata ? true,
           enableShell ? false,
+          structureTest ? null,
           config ? { },
           meta ? { },
           passthru ? { },
@@ -154,6 +171,7 @@ let
               "includeCaCerts"
               "includeTzdata"
               "enableShell"
+              "structureTest"
               "config"
               "meta"
               "passthru"
@@ -169,17 +187,47 @@ let
               ${contentsAttr} = mergedContents;
             };
 
-          tests = if (passthru.tests or { }) == { } then { oci = ociTest; } else passthru.tests;
-
-          runTests = writeShellApplication {
-            name = "${name}-tests";
-            text = lib.concatStringsSep "\n" (
-              lib.mapAttrsToList (testName: testPkg: ''
-                echo "Running test '${testName}' for ${name}..."
-                ${lib.getExe testPkg} "$@"
-              '') tests
-            );
+          defaultTests = {
+            oci = ociTest;
+          }
+          // lib.optionalAttrs (structureTest != null) {
+            structure = mkStructureTest structureTest;
+          }
+          // lib.optionalAttrs runAsNonRoot {
+            restricted = mkRestrictedTest structureTest;
           };
+          tests = lib.filterAttrs (_: v: v != null) (defaultTests // (passthru.tests or { }));
+
+          builtinOrder = [
+            "oci"
+            "structure"
+            "restricted"
+          ];
+          orderedTestNames =
+            (builtins.filter (k: tests ? ${k}) builtinOrder)
+            ++ (builtins.filter (k: !(builtins.elem k builtinOrder)) (builtins.attrNames tests));
+
+          testsFile = writeText "${name}-tests.json" (
+            builtins.toJSON (
+              map (testName: {
+                name = testName;
+                bin = lib.getExe tests.${testName};
+              }) orderedTestNames
+            )
+          );
+
+          runTests =
+            runCommand "${name}-tests"
+              {
+                nativeBuildInputs = [ makeWrapper ];
+                meta.mainProgram = "${name}-tests";
+              }
+              ''
+                mkdir -p "$out/bin"
+                makeWrapper ${lib.getExe testRunner} "$out/bin/${name}-tests" \
+                  --add-flags --tests-json \
+                  --add-flags ${testsFile}
+              '';
         in
         (builder builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // defaultMeta // meta;
@@ -194,7 +242,9 @@ let
     in
     dockerTools
     // {
-      inherit nonRootNss ociTest structureTest;
+      inherit nonRootNss ociTest;
+      restrictedTest = mkRestrictedTest;
+      structureTest = mkStructureTest;
       buildImage = wrapBuilder {
         builder = dockerTools.buildImage;
         contentsAttr = "copyToRoot";
