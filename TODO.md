@@ -13,10 +13,10 @@ Tracked ideas and recommended improvements as `nix-containers` grows into a gene
 
 ## 📦 `containerTools` & Image Architecture
 
-- [ ] **Default to `buildLayeredImage` (or `streamLayeredImage`)**: `buildImage` packs the entire closure into a single tarball layer. Switching to `buildLayeredImage` splits Nix store paths across layers so GHCR and Kubernetes/Docker nodes deduplicate shared dependencies (`glibc`, `bash`, `coreutils`) across containers and upgrades. (Ensure `dive-archive` handles uncompressed `.tar` archives too if `streamLayeredImage` is used.)
-- [ ] **Non-root user support by default**: Add an opt-out non-root user helper (e.g., `65532:65532` / `nonroot` via `fakeNss.override` and `config.User`) so images satisfy Kubernetes `runAsNonRoot: true` Pod Security Standards out of the box.
-- [ ] **TLS / timezone defaults**: Add opt-out or shorthand options for `dockerTools.caCertificates` and `tzdata` so networked containers don't fail outbound HTTPS verification.
-- [ ] **Distroless vs. shell presets**: Add a clean toggle (e.g., `enableShell ? false`) to include `usrBinEnv`, `binSh`, `bash`, and `coreutils` when needed (like Argo steps in `ffmpeg`) while keeping pure single-binary services distroless by default.
+- [x] **Default to `buildLayeredImage` (or `streamLayeredImage`)**: `buildImage` packs the entire closure into a single tarball layer. Switching to `buildLayeredImage` splits Nix store paths across layers so GHCR and Kubernetes/Docker nodes deduplicate shared dependencies (`glibc`, `bash`, `coreutils`) across containers and upgrades. (Ensure `dive-archive` handles uncompressed `.tar` archives too if `streamLayeredImage` is used.)
+- [x] **Non-root user support by default**: Add an opt-out non-root user helper (e.g., `65532:65532` / `nonroot` via `fakeNss.override` and `config.User`) so images satisfy Kubernetes `runAsNonRoot: true` Pod Security Standards out of the box.
+- [x] **TLS / timezone defaults**: Add opt-out or shorthand options for `dockerTools.caCertificates` and `tzdata` so networked containers don't fail outbound HTTPS verification.
+- [x] **Distroless vs. shell presets**: Add a clean toggle (e.g., `enableShell ? false`) to include `usrBinEnv`, `binSh`, `bash`, and `coreutils` when needed (like Argo steps in `ffmpeg`) while keeping pure single-binary services distroless by default.
 
 ---
 

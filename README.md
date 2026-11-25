@@ -89,7 +89,7 @@ spec:
 
 ## ➕ Adding a New Container
 
-1. Create a new directory under `nix/containers/<name>/` with a `default.nix` using `containerTools.buildImage` (or `containerTools.buildLayeredImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (any of which can be overridden), with standard OCI labels like `org.opencontainers.image.source` applied automatically.
+1. Create a new directory under `nix/containers/<name>/` with a `default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (any of which can be overridden). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels like `org.opencontainers.image.source` are applied automatically (and `enableShell = true` adds `bash` + `coreutils`).
 2. Stage the new files with `git add` (required so Nix Flakes sees them).
 3. Run `nix fmt` and `nix flake check`.
 4. Test building locally with `nix build .#<name>`.

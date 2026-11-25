@@ -65,7 +65,7 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 ## ➕ Adding a New Container
 
 To add a new container (for example, `keycloak`):
-1. Create `nix/containers/<name>/default.nix` using `containerTools.buildImage` (or `containerTools.buildLayeredImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Standard OCI labels including `org.opencontainers.image.source` are applied automatically.
+1. Create `nix/containers/<name>/default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels including `org.opencontainers.image.source` are enabled by default (`runAsNonRoot`, `includeCaCerts`, `includeTzdata`, and `enableShell` can all be toggled).
 2. Put any container-specific scripts or assets alongside it in `nix/containers/<name>/`.
 3. Stage new files with `git add` so Nix Flakes includes them in evaluation.
 4. Run `nix fmt` and `nix flake check`.

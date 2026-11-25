@@ -1,7 +1,5 @@
 {
   containerTools,
-  bash,
-  coreutils,
   ffmpeg-headless,
   gawk,
   jq,
@@ -14,16 +12,12 @@ let
     text = builtins.readFile ./argo-ffmpeg-progress.sh;
   };
 in
-containerTools.buildImage {
+containerTools.buildLayeredImage {
   name = "ffmpeg";
   package = ffmpeg-headless;
   description = "Minimal ffmpeg container with Argo Workflows progress reporting";
-  copyToRoot = with containerTools; [
-    usrBinEnv
-    binSh
-    fakeNss
-    bash
-    coreutils
+  enableShell = true;
+  contents = [
     jq
     argo-ffmpeg-progress
   ];
