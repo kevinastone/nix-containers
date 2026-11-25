@@ -37,16 +37,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cache Nix Store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.arch }}-ci-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.arch }}-ci-
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
 
       - name: Run Nix checks
         run: nix flake check -L
