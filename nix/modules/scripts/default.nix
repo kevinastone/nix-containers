@@ -29,12 +29,6 @@ in
           runtimeInputs = [ pkgs.regctl ];
         };
 
-        push-multiarch = writeNuApplication {
-          name = "push-multiarch";
-          file = ./push-multiarch.nu;
-          runtimeInputs = [ pkgs.regctl ];
-        };
-
         dive-archive = pkgs.writeShellApplication {
           name = "dive-archive";
           runtimeInputs = with pkgs; [
@@ -42,8 +36,18 @@ in
             gzip
           ];
           text = ''
-            dive --source docker-archive <(gunzip -c "''${1:-result}")
+            archive="''${1:-result}"
+            if [ "$#" -gt 0 ]; then
+              shift
+            fi
+            dive --source docker-archive <(gzip -cdf "$archive") "$@"
           '';
+        };
+
+        push-multiarch = writeNuApplication {
+          name = "push-multiarch";
+          file = ./push-multiarch.nu;
+          runtimeInputs = [ pkgs.regctl ];
         };
       };
 

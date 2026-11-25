@@ -7,6 +7,7 @@
     {
       treefmt = {
         projectRootFile = "flake.nix";
+        programs.keep-sorted.enable = true;
         programs.nixfmt.enable = true;
         programs.statix.enable = true;
         programs.deadnix.enable = true;

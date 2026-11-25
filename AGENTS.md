@@ -60,11 +60,11 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `push-multiarch`, `update-readme`) and `checks.readme-catalog`.
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
     - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
     - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
-  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.

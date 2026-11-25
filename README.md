@@ -67,7 +67,7 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 
 ### Nix DevShell
 
-Enter the development shell to load utility packages (`dive`, `skopeo`, `dive-archive`) automatically:
+Enter the development shell to load container inspection, diffing, and registry utilities (`dive`, `dive-archive`, `nix-tree`, `nvd`, `regctl`, `skopeo`, `cosign`, `container-structure-test`, `just`, `nushell`) automatically:
 
 ```bash
 nix develop

@@ -9,11 +9,24 @@
     {
       devShells.default = pkgs.mkShell {
         nativeBuildInputs = [ config.treefmt.build.wrapper ];
-        packages = with pkgs; [
-          dive
-          skopeo
-          self'.packages.dive-archive
-        ];
+        packages =
+          with pkgs;
+          with self'.packages;
+          [
+            # keep-sorted start
+            container-structure-test
+            cosign
+            dive
+            dive-archive
+            just
+            nix-tree
+            nushell
+            nvd
+            regctl
+            skopeo
+            update-readme
+            # keep-sorted end
+          ];
       };
     };
 }
