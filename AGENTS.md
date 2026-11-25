@@ -6,6 +6,18 @@ Welcome! If you are an AI coding assistant (like Antigravity) or a developer onb
 
 ## 🛠️ Tooling & Commands
 
+A root `justfile` (available inside `nix develop` / `direnv`) provides shortcuts for common maintainer workflows (`just --list`):
+
+```bash
+just fmt              # Format the entire codebase (nix fmt)
+just check            # Verify flake config, checks, and formatting (nix flake check)
+just new <container>  # Scaffold default.nix, structure-test.yaml, and README.md + sync catalog
+just build <container># Build the Linux OCI image tarball into ./result (works on macOS + Linux)
+just test <container> # Build image, run OCI/structure/restricted tests, and run dive --ci
+just dive <container> # Build image and inspect layers interactively in dive
+just inspect <name>   # Inspect dependency tree in nix-tree (--derivation)
+```
+
 ### 1. Code Formatting
 `nix-containers` is fully Nix-integrated. To format the entire codebase, always run:
 ```bash
@@ -20,20 +32,21 @@ nix flake check
 
 To build a specific OCI container image locally (which produces the symlink `./result` pointing to the built tarball):
 ```bash
-nix build .#<container>
-# e.g.:
+just build ffmpeg
+# or directly on Linux:
 nix build .#ffmpeg
 ```
 
 ### 3. Debugging & Inspecting
-Enter the Nix devShell to load development tools like `dive`, `skopeo`, and custom helper scripts:
+Enter the Nix devShell to load development tools like `just`, `dive`, `nix-tree`, `nvd`, `regctl`, `skopeo`, and custom helper scripts:
 ```bash
 nix develop
 ```
 
-Once in the devShell, you can inspect the OCI container layers using the `dive-archive` helper:
+Once in the devShell, you can inspect the OCI container layers or store closure:
 ```bash
 dive-archive ./result
+just inspect ffmpeg
 ```
 
 ### 4. Version Control (`jj`)
@@ -47,6 +60,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 ## 📁 Repository Structure
 
 - `flake.nix`: Entry point using `flake-parts` that imports `nix/modules/*`.
+- `justfile`: Task runner recipes (`new`, `build`, `test`, `dive`, `inspect`, `fmt`, `check`, `readme`).
 - `nix/modules/`:
   - `container-tools/`:
     - `default.nix`: `flake-parts` module exposing `containerTools` via `perSystem` `_module.args`.
@@ -56,15 +70,16 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
       - `default.nix`: Test suite wiring (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
       - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
       - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
-  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
+  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, exposes host-native `legacyPackages.containerTests`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `push-multiarch`, `update-readme`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `new-container`, `push-multiarch`, `update-readme`) and `checks.readme-catalog`.
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
+    - `new-container.nu`: Nushell scaffolding script (`new-container <name> [--package <pkg>]`) generating `default.nix`, `structure-test.yaml`, and `README.md`.
     - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
     - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
-  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
@@ -82,7 +97,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 ## ➕ Adding a New Container
 
 To add a new container (for example, `keycloak`):
-1. Create `nix/containers/<name>/default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels including `org.opencontainers.image.source` are enabled by default (`runAsNonRoot`, `includeCaCerts`, `includeTzdata`, and `enableShell` can all be toggled).
-2. Put any container-specific scripts or assets alongside it in `nix/containers/<name>/`.
-3. Ensure new files are tracked by running `jj status` (Jujutsu automatically tracks new non-ignored files in the colocated Git index so Nix Flakes includes them in evaluation; use `git add` only if not using `jj`).
-4. Run `nix fmt` and `nix flake check`.
+1. Run `just new <name>` (or `nix run .#new-container -- <name>`) inside the devShell to scaffold `nix/containers/<name>/{default.nix,structure-test.yaml,README.md}`, track the files with `jj`, sync the `README.md` catalog, and format.
+   - `containerTools.buildLayeredImage` (or `containerTools.buildImage`) accepts `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels including `org.opencontainers.image.source` are enabled by default (`runAsNonRoot`, `includeCaCerts`, `includeTzdata`, and `enableShell` can all be toggled).
+2. Customize `default.nix`, `structure-test.yaml`, and `README.md` (plus any container-specific scripts or assets alongside them in `nix/containers/<name>/`).
+3. Ensure any additional files are tracked by running `jj status`, sync the catalog if descriptions changed (`just readme`), and verify with `just fmt` and `just check` (plus `just test <name>` to build and test the image).

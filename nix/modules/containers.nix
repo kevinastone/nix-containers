@@ -88,5 +88,6 @@ in
     in
     {
       packages = lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers;
+      legacyPackages.containerTests = lib.mapAttrs (_: drv: drv.test) containers;
     };
 }

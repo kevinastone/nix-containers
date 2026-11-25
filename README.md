@@ -21,8 +21,8 @@ ghcr.io/kevinastone/nix-containers/<container>
 - [Adding a New Container](#adding-a-new-container)
 - [Local Development](#local-development)
   - [Nix DevShell](#nix-devshell)
-  - [Building an Image](#building-an-image)
-  - [Debugging Layer Efficiency](#debugging-layer-efficiency)
+  - [Building & Testing an Image](#building--testing-an-image)
+  - [Debugging Layer Efficiency & Closure Size](#debugging-layer-efficiency--closure-size)
   - [Code Formatting](#code-formatting)
 - [CI/CD & Publishing](#cicd--publishing)
 
@@ -53,11 +53,20 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 
 ## ➕ Adding a New Container
 
-1. Create a new directory under `nix/containers/<name>/` with a `default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (any of which can be overridden). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels like `org.opencontainers.image.source` are applied automatically (and `enableShell = true` adds `bash` + `coreutils`).
-2. (Optional) Add a `nix/containers/<name>/structure-test.yaml` (`container-structure-test` config) and pass `structureTest = ./structure-test.yaml;` to verify runtime behavior, commands, and metadata in CI before publishing (every container also gets `passthru.tests.oci` and, when `runAsNonRoot = true`, `passthru.tests.restricted` automatically).
-3. Stage the new files with `git add` (required so Nix Flakes sees them).
-4. Run `nix fmt` and `nix flake check`.
-5. Test building locally with `nix build .#<name>` (and `nix run .#<name>.test -- ./result` on Linux).
+Inside `nix develop` (or `direnv`), scaffold a new container with `just`:
+
+```bash
+just new <name>
+# or if the nixpkgs attribute differs from the image name:
+just new <name> --package <nixpkgs-attr>
+```
+
+This creates `nix/containers/<name>/` (`default.nix`, `structure-test.yaml`, and `README.md`), tracks the files, updates the `README.md` catalog, and runs `nix fmt`:
+
+1. Customize `nix/containers/<name>/default.nix` (`containerTools.buildLayeredImage` / `containerTools.buildImage`). Passing `package` automatically derives `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion. Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels like `org.opencontainers.image.source` are applied automatically (and `enableShell = true` adds `bash` + `coreutils`).
+2. Update `nix/containers/<name>/structure-test.yaml` (`container-structure-test` config) to verify runtime behavior, commands, and metadata (every container also gets `passthru.tests.oci` and, when `runAsNonRoot = true`, `passthru.tests.restricted` automatically).
+3. Run `just readme` (if `description` changed), `just fmt`, and `just check`.
+4. Build and smoke-test locally with `just test <name>` (works on both Linux and macOS with a Linux builder + OrbStack/Docker/Podman).
 
 `nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, exposes them as flake packages on their supported platforms, and computes `lib.ci` for GitHub Actions.
 
@@ -67,28 +76,36 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 
 ### Nix DevShell
 
-Enter the development shell to load container inspection, diffing, and registry utilities (`dive`, `dive-archive`, `nix-tree`, `nvd`, `regctl`, `skopeo`, `cosign`, `container-structure-test`, `just`, `nushell`) automatically:
+Enter the development shell (or allow `.envrc` via `direnv`) to load `just`, `new-container`, `update-readme`, `dive`, `dive-archive`, `nix-tree`, `nvd`, `regctl`, `skopeo`, `cosign`, `container-structure-test`, and `nushell`:
 
 ```bash
 nix develop
+just --list
 ```
 
-### Building an Image
+### Building & Testing an Image
 
-To build an OCI container tarball locally for your host architecture:
+Use `just` to target the matching Linux container derivation automatically (`.#packages.<arch>-linux.<name>`, working seamlessly on both Linux and macOS):
+
+```bash
+just build ffmpeg
+just test ffmpeg
+```
+
+On Linux, you can also invoke Nix directly:
 
 ```bash
 nix build .#ffmpeg
+nix run .#ffmpeg.test -- ./result
 ```
 
-This creates a symlink `result` pointing to the output tarball.
+### Debugging Layer Efficiency & Closure Size
 
-### Debugging Layer Efficiency
-
-Use the custom `dive-archive` script loaded by `nix develop` to inspect the container layers of your local build:
+Inspect container layers in `dive` or trace Nix dependency bloat (`why-depends`) in `nix-tree`:
 
 ```bash
-dive-archive ./result
+just dive ffmpeg
+just inspect ffmpeg
 ```
 
 ### Code Formatting

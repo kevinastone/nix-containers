@@ -44,6 +44,11 @@ in
           '';
         };
 
+        new-container = writeNuApplication {
+          name = "new-container";
+          file = ./new-container.nu;
+        };
+
         push-multiarch = writeNuApplication {
           name = "push-multiarch";
           file = ./push-multiarch.nu;

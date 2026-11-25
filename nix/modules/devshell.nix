@@ -19,6 +19,7 @@
             dive
             dive-archive
             just
+            new-container
             nix-tree
             nushell
             nvd
