@@ -18,8 +18,6 @@ ghcr.io/kevinastone/nix-containers/<container>
 
 - [Overview](#overview)
 - [Containers](#containers)
-  - [`ffmpeg`](#ffmpeg)
-  - [`keycloak`](#keycloak)
 - [Adding a New Container](#adding-a-new-container)
 - [Local Development](#local-development)
   - [Nix DevShell](#nix-devshell)
@@ -43,65 +41,10 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 
 ## 🐳 Containers
 
-### `ffmpeg`
-
-- **Image**: `ghcr.io/kevinastone/nix-containers/ffmpeg`
-- **Recipe**: [nix/containers/ffmpeg/default.nix](nix/containers/ffmpeg/default.nix)
-
-A minimal `ffmpeg` container designed for cloud-native transcoding pipelines (such as Argo Workflows). Includes `ffmpeg-headless`, `bash`, `jq`, `coreutils`, and the custom `argo-ffmpeg-progress` utility.
-
-#### Using `argo-ffmpeg-progress`
-
-`argo-ffmpeg-progress` consumes `ffmpeg`'s `-progress` stream from `stdin`, calculates the percentage completed based on total duration, and writes `<percent>/100` to a target file for Argo Workflows:
-
-```bash
-ffmpeg -i input.mp4 \
-  -c:v libx264 \
-  -progress >(argo-ffmpeg-progress 120 /tmp/argo-progress) \
-  output.mp4
-```
-
-#### Argo Workflows Integration
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Workflow
-metadata:
-  generateName: transcode-video-
-spec:
-  entrypoint: transcode-step
-  templates:
-  - name: transcode-step
-    progressFile: "/tmp/argo-progress"
-    container:
-      image: ghcr.io/kevinastone/nix-containers/ffmpeg:main
-      command: [bash, -c]
-      args:
-        - |
-          DURATION=3600 # 1 hour in seconds
-
-          ffmpeg -i input.mkv \
-            -c:v libx264 -c:a aac \
-            -progress >(argo-ffmpeg-progress "$DURATION" /tmp/argo-progress) \
-            output.mp4
-```
-
-### `keycloak`
-
-- **Image**: `ghcr.io/kevinastone/nix-containers/keycloak`
-- **Recipe**: [nix/containers/keycloak/default.nix](nix/containers/keycloak/default.nix)
-
-A minimal, non-root (`65532:65532`) Keycloak container matching the upstream `/opt/keycloak` layout (`/opt/keycloak/bin/kc.sh` entrypoint, `start --optimized` default command, writable `conf`/`data`/`providers`/`themes` directories, and ports `8080`, `8443`, and `9000` exposed), pre-augmented at build time with PostgreSQL (`db=postgres`), health, metrics, HTTP metric histograms, and user event metrics.
-
-```bash
-docker run --rm -p 8080:8080 -p 9000:9000 \
-  -e KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak \
-  -e KC_DB_USERNAME=keycloak \
-  -e KC_DB_PASSWORD=keycloak \
-  -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
-  -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
-  ghcr.io/kevinastone/nix-containers/keycloak:main
-```
+| Container | Image | Description |
+| --- | --- | --- |
+| [`ffmpeg`](nix/containers/ffmpeg/README.md) | `ghcr.io/kevinastone/nix-containers/ffmpeg` | Minimal `ffmpeg` container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
+| [`keycloak`](nix/containers/keycloak/README.md) | `ghcr.io/kevinastone/nix-containers/keycloak` | Non-root Keycloak container matching `/opt/keycloak` pre-augmented for Postgres & metrics ([recipe](nix/containers/keycloak/default.nix)) |
 
 ---
 
