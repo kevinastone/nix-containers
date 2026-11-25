@@ -117,6 +117,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix:
@@ -159,6 +161,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ⬆️ Push Image to GHCR
+        id: push
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
@@ -168,4 +171,17 @@ jobs:
           for tar in artifacts/*.tar.gz; do
             ARGS+=("linux/$(basename "$tar" .tar.gz)=${tar}")
           done
-          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${ARGS[@]}"
+          nix run .#push-multiarch -- "ghcr.io/${{ github.repository }}/${{ matrix.container }}" "${ARGS[@]}" --github-output "$GITHUB_OUTPUT"
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign multi-arch OCI index
+        run: cosign sign --yes "${{ steps.push.outputs.repo }}@${{ steps.push.outputs.digest }}"
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ steps.push.outputs.repo }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

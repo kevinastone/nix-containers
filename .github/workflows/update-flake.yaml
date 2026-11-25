@@ -65,6 +65,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     uses: ./.github/workflows/ci.yaml
     with:
       ref: ${{ needs.update-flake.outputs.sha }}

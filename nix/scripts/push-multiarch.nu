@@ -19,6 +19,7 @@ def main [
     --tags: string # Newline-separated tags to publish (defaults to $env.TAGS)
     --source-url: string # OCI org.opencontainers.image.source annotation (defaults to $env.SOURCE_URL)
     --drvs-json: string # JSON map of <arch> -> Nix drvPath (defaults to $env.DRVS_JSON)
+    --github-output: path # Optional $GITHUB_OUTPUT file path (writes repo and digest)
 ] {
     if ($images | is-empty) {
         error make {msg: "At least one <platform>=<image-tar> argument is required"}
@@ -71,6 +72,19 @@ def main [
         for tag in $resolved_tags {
             print $"Creating and pushing OCI index for ($tag)..."
             ^regctl index create $tag ...$annotations ...$refs
+        }
+
+        let index_digest = (^regctl manifest digest ($resolved_tags | first) | str trim)
+        print $"Published OCI index digest: ($repo)@($index_digest)"
+
+        if $github_output != null {
+            [
+                $"repo=($repo)"
+                $"digest=($index_digest)"
+            ]
+            | str join "\n"
+            | $"($in)\n"
+            | save --append $github_output
         }
     } finally {
         rm -rf $tmp_dir

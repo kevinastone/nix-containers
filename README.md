@@ -143,4 +143,20 @@ The GitHub Actions workflow defined in [.github/workflows/ci.yaml](.github/workf
 1. **Linting & Change Detection**: Runs `nix flake check`, evaluates `.#lib.ci` (which computes each container's supported architectures and Nix `drvPath`s), and filters out containers whose published `:main` OCI index already matches `dev.nix-containers.drv.<arch>`.
 2. **Build Matrix**: Spawns `amd64` and `arm64` runners for each discovered container.
 3. **Upstream Tagging**: Extracts each container's `.imageTag` directly from Nix to tag the published image alongside the branch tag.
-4. **Multi-Arch Push**: Combines architecture builds into a multi-arch manifest using `push-multiarch` and publishes to `ghcr.io/<owner>/<repo>/<container>`.
+4. **Multi-Arch Push, Signing & Provenance**: Combines architecture builds into a multi-arch OCI index using `push-multiarch`, publishes to `ghcr.io/<owner>/<repo>/<container>`, signs the index digest keyless with Sigstore `cosign`, and attaches GitHub SLSA build provenance attestations.
+
+### Verifying Images
+
+Published images can be verified using Sigstore `cosign` or the GitHub CLI:
+
+```bash
+# Verify keyless Sigstore signature
+cosign verify \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github\.com/kevinastone/nix-containers/\.github/workflows/(ci|update-flake)\.yaml@refs/heads/main$' \
+  ghcr.io/kevinastone/nix-containers/ffmpeg:main
+
+# Verify GitHub SLSA build provenance attestation
+gh attestation verify oci://ghcr.io/kevinastone/nix-containers/ffmpeg:main \
+  --owner kevinastone
+```
