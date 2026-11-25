@@ -39,5 +39,5 @@ containerTools.buildLayeredImage {
       "3493/tcp" = { };
     };
   };
-  structureTest = ./test.yaml;
+  structureTest = ./structure-test.yaml;
 }

@@ -2,7 +2,7 @@
 
 - **Image**: `ghcr.io/kevinastone/nix-containers/nut`
 - **Recipe**: [default.nix](default.nix)
-- **Tests**: [test.yaml](test.yaml)
+- **Tests**: [structure-test.yaml](structure-test.yaml)
 
 A minimal Network UPS Tools (NUT) server container built from `nixpkgs`'s `nut` package (including USB HID, SNMP, IPMI, and serial drivers). Starts configured UPS drivers via `upsdrvctl` and runs `upsd` in the foreground on port `3493` with graceful `SIGTERM` cleanup.
 

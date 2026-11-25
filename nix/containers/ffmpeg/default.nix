@@ -21,5 +21,5 @@ containerTools.buildLayeredImage {
     jq
     argo-ffmpeg-progress
   ];
-  structureTest = ./test.yaml;
+  structureTest = ./structure-test.yaml;
 }

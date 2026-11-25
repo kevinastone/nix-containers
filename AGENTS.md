@@ -58,7 +58,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
-    - `test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
+    - `structure-test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
 - `nix/scripts/`:
   - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
   - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.

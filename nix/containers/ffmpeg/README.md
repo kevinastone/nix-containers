@@ -2,7 +2,7 @@
 
 - **Image**: `ghcr.io/kevinastone/nix-containers/ffmpeg`
 - **Recipe**: [default.nix](default.nix)
-- **Tests**: [test.yaml](test.yaml)
+- **Tests**: [structure-test.yaml](structure-test.yaml)
 
 A minimal, non-root (`65532:65532`) `ffmpeg` container designed for cloud-native transcoding pipelines (such as Argo Workflows). Includes `ffmpeg-headless`, `bash`, `jq`, `coreutils`, and the custom `argo-ffmpeg-progress` utility.
 

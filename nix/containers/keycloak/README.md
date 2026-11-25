@@ -2,7 +2,7 @@
 
 - **Image**: `ghcr.io/kevinastone/nix-containers/keycloak`
 - **Recipe**: [default.nix](default.nix)
-- **Tests**: [test.yaml](test.yaml)
+- **Tests**: [structure-test.yaml](structure-test.yaml)
 
 A minimal, non-root (`65532:65532`) Keycloak container matching the upstream `/opt/keycloak` layout (`/opt/keycloak/bin/kc.sh` entrypoint, `start --optimized` default command, writable `conf`/`data`/`providers`/`themes` directories, and ports `8080`, `8443`, and `9000` exposed), pre-augmented at build time with:
 
