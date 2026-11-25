@@ -61,15 +61,13 @@ let
 
   mkImageModule =
     {
-      contentsAttr,
-      supportsFakeRoot,
       defaultSource,
       packageLicense,
     }:
     { config, ... }:
     let
-      defaultUid = if config.runAsNonRoot && supportsFakeRoot then config.user.uid else 0;
-      defaultGid = if config.runAsNonRoot && supportsFakeRoot then config.user.gid else 0;
+      defaultUid = if config.runAsNonRoot then config.user.uid else 0;
+      defaultGid = if config.runAsNonRoot then config.user.gid else 0;
     in
     {
       freeformType = types.attrsOf types.raw;
@@ -148,7 +146,7 @@ let
           default = null;
           description = "Path to a container-structure-test YAML configuration.";
         };
-        ${contentsAttr} = mkOption {
+        contents = mkOption {
           type = types.either types.package (types.listOf types.package);
           default = [ ];
           apply = lib.toList;
@@ -177,23 +175,17 @@ let
         fakeRootCommands = mkOption {
           type = types.lines;
           default = "";
-          description = "Extra shell commands executed under fakeroot (buildLayeredImage only).";
+          description = "Extra shell commands executed under fakeroot.";
         };
       };
     };
 
   evalImageConfig =
-    {
-      contentsAttr,
-      supportsFakeRoot,
-      oci,
-      args,
-    }:
+    { oci, args }:
     let
       evaluated = lib.evalModules {
         modules = [
           (mkImageModule {
-            inherit contentsAttr supportsFakeRoot;
             inherit (oci) defaultSource packageLicense;
           })
           { config = args; }

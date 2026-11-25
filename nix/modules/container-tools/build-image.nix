@@ -35,26 +35,10 @@
 
       nonRootNss = mkUserNss defaultNonRootUser;
 
-      wrapBuilder =
-        {
-          builder,
-          contentsAttr,
-          supportsFakeRoot ? false,
-        }:
+      buildLayeredImage =
         args:
         let
-          inherit
-            (evalImageConfig {
-              inherit
-                contentsAttr
-                supportsFakeRoot
-                oci
-                args
-                ;
-            })
-            cfg
-            passthroughArgs
-            ;
+          inherit (evalImageConfig { inherit oci args; }) cfg passthroughArgs;
 
           inherit (cfg)
             package
@@ -70,6 +54,7 @@
             enableShell
             dirs
             structureTest
+            contents
             config
             meta
             passthru
@@ -79,8 +64,8 @@
 
           userNss = if user == defaultNonRootUser then nonRootNss else mkUserNss user;
 
-          defaultUid = if runAsNonRoot && supportsFakeRoot then user.uid else 0;
-          defaultGid = if runAsNonRoot && supportsFakeRoot then user.gid else 0;
+          defaultUid = if runAsNonRoot then user.uid else 0;
+          defaultGid = if runAsNonRoot then user.gid else 0;
 
           defaultDirs = {
             "/tmp" = {
@@ -126,9 +111,10 @@
           ) dirList;
 
           mergedExtraCommands = lib.concatStringsSep "\n" (
-            lib.filter (s: s != "") (
-              [ mkdirCommands ] ++ lib.optional (!supportsFakeRoot) chmodCommands ++ [ extraCommands ]
-            )
+            lib.filter (s: s != "") [
+              mkdirCommands
+              extraCommands
+            ]
           );
 
           mergedFakeRootCommands = lib.concatStringsSep "\n" (
@@ -152,7 +138,7 @@
             ]
             ++ lib.optional (package != null) package;
 
-          mergedContents = lib.unique (baseContents ++ cfg.${contentsAttr});
+          mergedContents = lib.unique (baseContents ++ contents);
 
           userEnv = config.Env or [ ];
           hasEnvKey = key: builtins.any (lib.hasPrefix "${key}=") userEnv;
@@ -197,12 +183,10 @@
               inherit name tag;
               config = mergedConfig;
               extraCommands = mergedExtraCommands;
-            }
-            // lib.optionalAttrs supportsFakeRoot {
               fakeRootCommands = mergedFakeRootCommands;
             }
             // lib.optionalAttrs (mergedContents != [ ]) {
-              ${contentsAttr} = mergedContents;
+              contents = mergedContents;
             };
 
           closure = pkgs.closureInfo {
@@ -223,26 +207,14 @@
             extraTests = passthru.tests or { };
           };
         in
-        assert lib.assertMsg
-          (supportsFakeRoot || (fakeRootCommands == "" && builtins.all (d: d.uid == 0 && d.gid == 0) dirList))
-          "containerTools.buildImage does not support non-root `dirs` ownership or `fakeRootCommands` without a VM; use `containerTools.buildLayeredImage` instead";
-        (builder builderArgs).overrideAttrs (old: {
+        (dockerTools.buildLayeredImage builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // oci.mkMeta { inherit package description; } // meta;
           passthru = (old.passthru or { }) // passthru // { inherit closure; } // testSuite;
         });
     in
     {
       containerTools = {
-        inherit mkUserNss nonRootNss;
-        buildImage = wrapBuilder {
-          builder = dockerTools.buildImage;
-          contentsAttr = "copyToRoot";
-        };
-        buildLayeredImage = wrapBuilder {
-          builder = dockerTools.buildLayeredImage;
-          contentsAttr = "contents";
-          supportsFakeRoot = true;
-        };
+        inherit buildLayeredImage mkUserNss nonRootNss;
       };
     };
 }

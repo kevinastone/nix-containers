@@ -8,13 +8,13 @@
   ];
 
   perSystem =
-    { config, pkgs, ... }:
+    { config, ... }:
     {
       options.containerTools = lib.mkOption {
         type = lib.types.attrsOf lib.types.raw;
         default = { };
       };
 
-      config._module.args.containerTools = pkgs.dockerTools // config.containerTools;
+      config._module.args.containerTools = config.containerTools;
     };
 }
