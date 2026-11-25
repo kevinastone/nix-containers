@@ -60,6 +60,16 @@ in
           file = ./push-multiarch.nu;
           runtimeInputs = [ pkgs.regctl ];
         };
+
+        scan-image = writeNuApplication {
+          name = "scan-image";
+          file = ./scan-image.nu;
+          runtimeInputs = with pkgs; [
+            grype
+            gzip
+            syft
+          ];
+        };
       };
 
       checks.readme-catalog = pkgs.runCommand "check-readme-catalog" { } ''

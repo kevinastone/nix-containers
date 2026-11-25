@@ -18,6 +18,7 @@
             cosign
             dive
             dive-archive
+            grype
             just
             new-container
             nix-tree
@@ -25,7 +26,9 @@
             nvd
             pinact
             regctl
+            scan-image
             skopeo
+            syft
             update-readme
             zizmor
             # keep-sorted end

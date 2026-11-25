@@ -141,4 +141,9 @@ cosign verify \
 # Verify GitHub SLSA build provenance attestation
 gh attestation verify oci://ghcr.io/kevinastone/nix-containers/ffmpeg:main \
   --owner kevinastone
+
+# Verify SPDX SBOM attestation
+gh attestation verify oci://ghcr.io/kevinastone/nix-containers/ffmpeg:main \
+  --owner kevinastone \
+  --predicate-type https://spdx.dev/Document/v2.3
 ```

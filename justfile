@@ -37,6 +37,10 @@ test name: (build name)
     nix run .#containerTests.{{ name }} -- ./result
     dive-archive ./result --ci
 
+# Build a container image, generate an SBOM, and scan for vulnerabilities
+scan name *args: (build name)
+    scan-image ./result --label {{ name }} {{ args }}
+
 # Build a container image and inspect layers interactively in dive
 dive name *args: (build name)
     dive-archive ./result {{ args }}

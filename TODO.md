@@ -26,7 +26,7 @@ Tracked tooling, PR testing improvements, and architectural optimizations to mak
 - [x] **Deduplicated Nix CI binary caching (`magic-nix-cache-action`)**: Switched `.github/actions/setup-nix/action.yml` from monolithic `cache-nix-action` `/nix/store` tarballs to `DeterminateSystems/magic-nix-cache-action@v15` for per-NAR deduplication across jobs and automatic skipping of `cache.nixos.org` paths.
 - [ ] **Workflow & supply-chain security gates (`zizmor`, `pinact`, `sbomnix` + `grype`/`vulnix`)**:
   - [x] Added `zizmor` and `typos` to `nix/modules/treefmt.nix`, pinned all GitHub Actions to full commit SHAs (`pinact`), hardened workflows (`persist-credentials: false`, `env:` template bindings, dropped `secrets: inherit`), and grouped `.github/dependabot.yml` PRs with a 7-day cooldown.
-  - [ ] Generate Nix-native SBOMs (`sbomnix` or `syft`) for `actions/attest-sbom` and scan them with `grype` or `vulnix` on PRs (since standard scanners miss packages in dpkg/apk-less Nix images).
+  - [x] Generate Nix-aware SPDX SBOMs (`syft` `nix-cataloger` via `nix/modules/scripts/scan-image.nu`), attach signed SBOM attestations on publish (`actions/attest`), and post `grype` CVE scan summaries to `$GITHUB_STEP_SUMMARY` on builds.
   - [ ] Add scheduled GHCR retention cleanup for untagged/superseded `:main` manifests while preserving semver tags and Sigstore referrers.
 
 ---
