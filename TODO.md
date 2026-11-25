@@ -6,8 +6,8 @@ Tracked ideas and recommended improvements as `nix-containers` grows into a gene
 
 ## 🧹 Repo Hygiene (Quick Wins)
 
-- [ ] **Remove duplicate root `dependabot.yml`**: Delete `./dependabot.yml` (GitHub only reads `.github/dependabot.yml`, which already exists with identical contents).
-- [ ] **Add `LICENSE` file**: Both `README.md` and `containerTools`'s default `org.opencontainers.image.licenses` declare `MIT`, so add a root `LICENSE` file to match.
+- [x] **Remove duplicate root `dependabot.yml`**: Delete `./dependabot.yml` (GitHub only reads `.github/dependabot.yml`, which already exists with identical contents).
+- [x] **Add `LICENSE` file**: Both `README.md` and `containerTools`'s default `org.opencontainers.image.licenses` declare `MIT`, so add a root `LICENSE` file to match.
 
 ---
 
