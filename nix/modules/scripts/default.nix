@@ -8,6 +8,21 @@ in
     let
       catalogFile = pkgs.writeText "catalog.json" (builtins.toJSON catalog);
 
+      dive-archive = pkgs.writeShellApplication {
+        name = "dive-archive";
+        runtimeInputs = with pkgs; [
+          dive
+          gzip
+        ];
+        text = ''
+          archive="''${1:-result}"
+          if [ "$#" -gt 0 ]; then
+            shift
+          fi
+          dive --source docker-archive <(gzip -cdf "$archive") "$@"
+        '';
+      };
+
       update-readme = writeNuApplication {
         name = "update-readme";
         file = ./update-readme.nu;
@@ -21,7 +36,7 @@ in
     in
     {
       packages = {
-        inherit update-readme;
+        inherit dive-archive update-readme;
 
         ci-matrix = writeNuApplication {
           name = "ci-matrix";
@@ -29,25 +44,19 @@ in
           runtimeInputs = [ pkgs.regctl ];
         };
 
-        dive-archive = pkgs.writeShellApplication {
-          name = "dive-archive";
-          runtimeInputs = with pkgs; [
-            dive
-            gzip
-          ];
-          text = ''
-            archive="''${1:-result}"
-            if [ "$#" -gt 0 ]; then
-              shift
-            fi
-            dive --source docker-archive <(gzip -cdf "$archive") "$@"
-          '';
-        };
-
         flake-update-report = writeNuApplication {
           name = "flake-update-report";
           file = ./flake-update-report.nu;
           runtimeInputs = [ pkgs.nvd ];
+        };
+
+        inspect-image = writeNuApplication {
+          name = "inspect-image";
+          file = ./inspect-image.nu;
+          runtimeInputs = [
+            dive-archive
+            pkgs.nvd
+          ];
         };
 
         new-container = writeNuApplication {

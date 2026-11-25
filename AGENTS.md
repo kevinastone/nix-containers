@@ -74,9 +74,10 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `new-container`, `push-multiarch`, `scan-image`, `update-readme`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `inspect-image`, `new-container`, `push-multiarch`, `scan-image`, `update-readme`) and `checks.readme-catalog`.
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
     - `flake-update-report.nu`: CI/CD Nushell script that diffs changed containers across `flake.lock` updates and renders `nvd` runtime closure changelogs for PR descriptions.
+    - `inspect-image.nu`: CI/dev Nushell script (`inspect-image [archive] --container <name>`) that validates `dive --ci` layer efficiency, summarizes compressed/uncompressed sizes and top runtime store paths (`nix path-info`), and diffs runtime closures vs `main` with `nvd`.
     - `new-container.nu`: Nushell scaffolding script (`new-container <name> [--package <pkg>]`) generating `default.nix`, `structure-test.yaml`, and `README.md`.
     - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
     - `scan-image.nu`: Nushell SBOM and vulnerability scanner (`scan-image [archive] [--sbom-output <path>]`) using `syft` (`nix-cataloger`) and `grype`.

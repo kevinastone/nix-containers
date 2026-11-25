@@ -19,6 +19,7 @@
             dive
             dive-archive
             grype
+            inspect-image
             just
             new-container
             nix-tree
