@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  withSystem,
+  ...
+}:
 let
   containersDir = ../containers;
 
@@ -8,25 +13,52 @@ let
     ) (builtins.readDir containersDir)
   );
 
-  ciArches = [
-    {
-      system = "x86_64-linux";
-      arch = "amd64";
-      runs-on = "ubuntu-24.04";
-    }
-    {
-      system = "aarch64-linux";
-      arch = "arm64";
-      runs-on = "ubuntu-24.04-arm";
-    }
-  ];
+  ciRunners = {
+    x86_64-linux = "ubuntu-24.04";
+    aarch64-linux = "ubuntu-24.04-arm";
+  };
+
+  ciArches = lib.sortOn (a: a.arch) (
+    lib.mapAttrsToList (
+      system: runs-on:
+      withSystem system (
+        { pkgs, ... }:
+        let
+          inherit (pkgs.stdenv.hostPlatform.go) GOOS GOARCH;
+        in
+        {
+          inherit system runs-on;
+          arch = GOARCH;
+          platform = "${GOOS}/${GOARCH}";
+        }
+      )
+    ) ciRunners
+  );
 
   containerArches =
     name: builtins.filter (a: (config.flake.packages.${a.system} or { }) ? ${name}) ciArches;
+
+  activeContainers = builtins.filter (c: containerArches c != [ ]) containerNames;
+
+  catalog = map (
+    container:
+    let
+      arches = containerArches container;
+      firstSystem = (builtins.head arches).system;
+      drv = config.flake.packages.${firstSystem}.${container};
+    in
+    {
+      name = container;
+      description = drv.meta.description or "";
+      platforms = map (a: a.platform) arches;
+      hasReadme = builtins.pathExists (containersDir + "/${container}/README.md");
+    }
+  ) activeContainers;
 in
 {
   flake.lib = {
     containers = containerNames;
+    inherit catalog;
     ci = {
       build = builtins.concatMap (
         container:
@@ -52,7 +84,7 @@ in
             }) arches
           );
         }
-      ) (builtins.filter (c: containerArches c != [ ]) containerNames);
+      ) activeContainers;
     };
   };
 

@@ -41,10 +41,12 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 
 ## 🐳 Containers
 
-| Container | Image | Description |
-| --- | --- | --- |
-| [`ffmpeg`](nix/containers/ffmpeg/README.md) | `ghcr.io/kevinastone/nix-containers/ffmpeg` | Minimal `ffmpeg` container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
-| [`keycloak`](nix/containers/keycloak/README.md) | `ghcr.io/kevinastone/nix-containers/keycloak` | Non-root Keycloak container matching `/opt/keycloak` pre-augmented for Postgres & metrics ([recipe](nix/containers/keycloak/default.nix)) |
+<!-- BEGIN:CONTAINER_CATALOG -->
+| Container | Image | Platforms | Description |
+| --- | --- | --- | --- |
+| [`ffmpeg`](nix/containers/ffmpeg/README.md) | `ghcr.io/kevinastone/nix-containers/ffmpeg` | `linux/amd64`, `linux/arm64` | Minimal ffmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
+| [`keycloak`](nix/containers/keycloak/README.md) | `ghcr.io/kevinastone/nix-containers/keycloak` | `linux/amd64`, `linux/arm64` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
+<!-- END:CONTAINER_CATALOG -->
 
 ---
 

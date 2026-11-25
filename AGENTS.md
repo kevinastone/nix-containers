@@ -58,7 +58,8 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 - `nix/scripts/`:
   - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
   - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
-  - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`ci-matrix`, `push-multiarch`, `dive-archive`).
+  - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
+  - `default.nix`: Nix packaging expressions for shared CI and dev shell scripts (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`).
 - `.github/workflows/`:
   - `ci.yaml`: CI/CD pipeline that validates the flake, auto-discovers containers from `flake.nix`, builds images for `amd64`/`arm64`, and publishes them to `ghcr.io/${{ github.repository }}/<container>`.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).

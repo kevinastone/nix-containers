@@ -11,7 +11,7 @@
 
   outputs =
     inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
+    flake-parts.lib.mkFlake { inherit inputs; } (top: {
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -28,12 +28,19 @@
       perSystem =
         { config, pkgs, ... }:
         let
-          scripts = pkgs.callPackage ./nix/scripts { };
+          scripts = pkgs.callPackage ./nix/scripts {
+            inherit (top.config.flake.lib) catalog;
+          };
         in
         {
           packages = {
-            inherit (scripts) ci-matrix push-multiarch;
+            inherit (scripts) ci-matrix push-multiarch update-readme;
           };
+
+          checks.readme-catalog = pkgs.runCommand "check-readme-catalog" { } ''
+            ${pkgs.lib.getExe scripts.update-readme} --check ${./README.md}
+            touch "$out"
+          '';
 
           devShells.default = pkgs.mkShell {
             nativeBuildInputs = [ config.treefmt.build.wrapper ];
@@ -44,5 +51,5 @@
             ];
           };
         };
-    };
+    });
 }

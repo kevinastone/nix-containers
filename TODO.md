@@ -39,5 +39,5 @@ Tracked ideas and recommended improvements as `nix-containers` grows into a gene
 ## 🛠️ Developer Experience
 
 - [ ] **Container scaffolding (`new-container` script or flake template)**: Add a Nushell helper (`nix run .#new-container -- <name>`) to scaffold `nix/containers/<name>/default.nix` from a minimal template.
-- [ ] **Auto-generated container catalog in `README.md`**: Generate or validate the `README.md` container table from `flake.lib` metadata (`name`, `description`, `version`, `platforms`) so documentation stays in sync as containers are added.
+- [x] **Auto-generated container catalog in `README.md`**: Generate or validate the `README.md` container table from `flake.lib` metadata (`name`, `description`, `version`, `platforms`) so documentation stays in sync as containers are added.
 - [ ] **macOS Linux-builder ergonomics**: Document (or add a flake helper/app for) building `.#packages.aarch64-linux.<container>` from macOS using `nix-darwin`'s `linux-builder` or OrbStack.
