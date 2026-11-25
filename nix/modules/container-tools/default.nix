@@ -42,6 +42,14 @@ let
           "${config}"
         ];
 
+      packageLicense =
+        pkg:
+        let
+          raw = lib.toList (pkg.meta.license or [ ]);
+          ids = lib.filter (x: x != null) (map (l: l.spdxId or l.shortName or null) raw);
+        in
+        if ids != [ ] then lib.concatStringsSep " AND " ids else "MIT";
+
       wrapBuilder =
         {
           builder,
@@ -61,7 +69,7 @@ let
               throw "containerTools: `tag` or `package` must be provided",
           description ? if package != null then package.meta.description or null else null,
           source ? defaultSource,
-          licenses ? "MIT",
+          licenses ? if package != null then packageLicense package else "MIT",
           runAsNonRoot ? true,
           includeCaCerts ? true,
           includeTzdata ? true,
