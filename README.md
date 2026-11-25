@@ -19,6 +19,7 @@ ghcr.io/kevinastone/nix-containers/<container>
 - [Overview](#overview)
 - [Containers](#containers)
   - [`ffmpeg`](#ffmpeg)
+  - [`keycloak`](#keycloak)
 - [Adding a New Container](#adding-a-new-container)
 - [Local Development](#local-development)
   - [Nix DevShell](#nix-devshell)
@@ -83,6 +84,23 @@ spec:
             -c:v libx264 -c:a aac \
             -progress >(argo-ffmpeg-progress "$DURATION" /tmp/argo-progress) \
             output.mp4
+```
+
+### `keycloak`
+
+- **Image**: `ghcr.io/kevinastone/nix-containers/keycloak`
+- **Recipe**: [nix/containers/keycloak/default.nix](nix/containers/keycloak/default.nix)
+
+A minimal, non-root (`65532:65532`) Keycloak container matching the upstream `/opt/keycloak` layout (`/opt/keycloak/bin/kc.sh` entrypoint, `start --optimized` default command, writable `conf`/`data`/`providers`/`themes` directories, and ports `8080`, `8443`, and `9000` exposed), pre-augmented at build time with PostgreSQL (`db=postgres`), health, metrics, HTTP metric histograms, and user event metrics.
+
+```bash
+docker run --rm -p 8080:8080 -p 9000:9000 \
+  -e KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak \
+  -e KC_DB_USERNAME=keycloak \
+  -e KC_DB_PASSWORD=keycloak \
+  -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+  -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+  ghcr.io/kevinastone/nix-containers/keycloak:main
 ```
 
 ---

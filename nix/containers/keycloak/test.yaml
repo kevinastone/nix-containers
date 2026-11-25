@@ -1,0 +1,40 @@
+schemaVersion: "2.0.0"
+
+metadataTest:
+  user: "65532:65532"
+  workdir: "/opt/keycloak"
+  entrypoint: ["/opt/keycloak/bin/kc.sh"]
+  cmd: ["start", "--optimized"]
+  exposedPorts: ["8080", "8443", "9000"]
+
+commandTests:
+  - name: "keycloak version"
+    command: "/opt/keycloak/bin/kc.sh"
+    args: ["--version"]
+    expectedOutput: ["Keycloak "]
+
+  - name: "keycloak help"
+    command: "/opt/keycloak/bin/kc.sh"
+    args: ["--help"]
+    expectedOutput: ["Usage:"]
+
+fileExistenceTests:
+  - name: "/opt/keycloak/conf exists"
+    path: "/opt/keycloak/conf"
+    shouldExist: true
+
+  - name: "/opt/keycloak/data exists"
+    path: "/opt/keycloak/data"
+    shouldExist: true
+
+  - name: "/opt/keycloak/providers exists"
+    path: "/opt/keycloak/providers"
+    shouldExist: true
+
+  - name: "/opt/keycloak/themes exists"
+    path: "/opt/keycloak/themes"
+    shouldExist: true
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true
