@@ -2,6 +2,7 @@
 {
   imports = [
     ./oci.nix
+    ./options.nix
     ./tests
     ./build-image.nix
   ];

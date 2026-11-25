@@ -65,7 +65,8 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `container-tools/`:
     - `default.nix`: `flake-parts` module exposing `containerTools` via `perSystem` `_module.args`.
     - `oci.nix`: Pure OCI label and platform metadata helpers (`packageLicense`, `mkLabels`, `mkMeta`).
-    - `build-image.nix`: Wraps `pkgs.dockerTools` (`buildImage`/`buildLayeredImage`) with `nonRootNss`, default contents/shell, and test suite wiring.
+    - `options.nix`: Typed `lib.evalModules` / `mkOption` schema for `buildImage` and `buildLayeredImage` (`user`, `dirs`, `enableShell`, `structureTest`, etc.).
+    - `build-image.nix`: Wraps `pkgs.dockerTools` (`buildImage`/`buildLayeredImage`) with `nonRootNss`, declarative `dirs`, default contents/shell, and test suite wiring.
     - `tests/`:
       - `default.nix`: Test suite wiring (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
       - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
