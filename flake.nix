@@ -20,7 +20,7 @@
       ];
 
       imports = [
-        ./nix/modules/container-tools.nix
+        ./nix/modules/container-tools
         ./nix/modules/containers.nix
         ./nix/modules/treefmt.nix
       ];

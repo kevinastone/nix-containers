@@ -6,15 +6,41 @@ let
     {
       lib,
       dockerTools,
+      writers,
+      writeShellApplication,
       bash,
       coreutils,
       tzdata,
+      container-structure-test,
     }:
     let
       nonRootNss = dockerTools.fakeNss.override {
         extraPasswdLines = [ "nonroot:x:65532:65532:Non-root user:/home/nonroot:/sbin/nologin" ];
         extraGroupLines = [ "nonroot:x:65532:" ];
       };
+
+      mkSmokeTest =
+        name: extraArgs:
+        writers.writeNuBin name {
+          makeWrapperArgs = [
+            "--prefix"
+            "PATH"
+            ":"
+            (lib.makeBinPath [ container-structure-test ])
+          ]
+          ++ extraArgs;
+        } (builtins.readFile ./smoke-test.nu);
+
+      ociTest = mkSmokeTest "oci-test" [ ];
+
+      structureTest =
+        config:
+        mkSmokeTest "structure-test" [
+          "--add-flags"
+          "--config"
+          "--add-flags"
+          "${config}"
+        ];
 
       wrapBuilder =
         {
@@ -42,6 +68,7 @@ let
           enableShell ? false,
           config ? { },
           meta ? { },
+          passthru ? { },
           extraCommands ? "",
           ...
         }@args:
@@ -121,6 +148,7 @@ let
               "enableShell"
               "config"
               "meta"
+              "passthru"
               "extraCommands"
               contentsAttr
             ])
@@ -132,14 +160,33 @@ let
             // lib.optionalAttrs (mergedContents != [ ]) {
               ${contentsAttr} = mergedContents;
             };
+
+          tests = if (passthru.tests or { }) == { } then { oci = ociTest; } else passthru.tests;
+
+          runTests = writeShellApplication {
+            name = "${name}-tests";
+            text = lib.concatStringsSep "\n" (
+              lib.mapAttrsToList (testName: testPkg: ''
+                echo "Running test '${testName}' for ${name}..."
+                ${lib.getExe testPkg} "$@"
+              '') tests
+            );
+          };
         in
         (builder builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // defaultMeta // meta;
+          passthru =
+            (old.passthru or { })
+            // passthru
+            // {
+              inherit tests;
+              test = runTests;
+            };
         });
     in
     dockerTools
     // {
-      inherit nonRootNss;
+      inherit nonRootNss ociTest structureTest;
       buildImage = wrapBuilder {
         builder = dockerTools.buildImage;
         contentsAttr = "copyToRoot";

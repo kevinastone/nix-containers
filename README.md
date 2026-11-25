@@ -90,9 +90,10 @@ spec:
 ## ➕ Adding a New Container
 
 1. Create a new directory under `nix/containers/<name>/` with a `default.nix` using `containerTools.buildLayeredImage` (or `containerTools.buildImage`). Pass `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (any of which can be overridden). Non-root user (`65532:65532`), `caCertificates`, `tzdata`, writable `/tmp`, and standard OCI labels like `org.opencontainers.image.source` are applied automatically (and `enableShell = true` adds `bash` + `coreutils`).
-2. Stage the new files with `git add` (required so Nix Flakes sees them).
-3. Run `nix fmt` and `nix flake check`.
-4. Test building locally with `nix build .#<name>`.
+2. (Optional) Add a `nix/containers/<name>/test.yaml` (`container-structure-test` config) and wire `passthru.tests.structure = containerTools.structureTest ./test.yaml;` to verify runtime behavior, commands, and metadata in CI before publishing (containers without custom tests still get a default `passthru.tests.oci` check).
+3. Stage the new files with `git add` (required so Nix Flakes sees them).
+4. Run `nix fmt` and `nix flake check`.
+5. Test building locally with `nix build .#<name>` (and `nix run .#<name>.test -- ./result` on Linux).
 
 `nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, exposes them as flake packages on their supported platforms, and computes `lib.ci.{build,push}` for GitHub Actions.
 

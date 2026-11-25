@@ -31,7 +31,7 @@ Tracked ideas and recommended improvements as `nix-containers` grows into a gene
 
 ## 🧪 Testing & Linting
 
-- [ ] **Container smoke tests**: Support an optional smoke test per container (e.g., running `<entrypoint> --version` or `container-structure-test` against the built archive in CI before pushing) so broken runtime paths or missing dynamic libs fail before publishing.
+- [x] **Container smoke tests**: Support an optional smoke test per container (e.g., running `<entrypoint> --version` or `container-structure-test` against the built archive in CI before pushing) so broken runtime paths or missing dynamic libs fail before publishing.
 - [x] **Expand `treefmt` & static checks**: Add `actionlint` + `yamlfmt` (for `.github/workflows/*.yaml`) and `shfmt` + `shellcheck` (for container scripts like `argo-ffmpeg-progress.sh`) in `nix/modules/treefmt.nix`.
 
 ---

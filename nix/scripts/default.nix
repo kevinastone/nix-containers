@@ -1,19 +1,19 @@
 { pkgs, ... }:
 let
-  mkRegctlNuScript =
-    name: file:
-    pkgs.writers.writeNuBin name {
+  mkNuScript =
+    name: file: runtimeInputs:
+    pkgs.writers.writeNuBin name (pkgs.lib.optionalAttrs (runtimeInputs != [ ]) {
       makeWrapperArgs = [
         "--prefix"
         "PATH"
         ":"
-        (pkgs.lib.makeBinPath [ pkgs.regctl ])
+        (pkgs.lib.makeBinPath runtimeInputs)
       ];
-    } (builtins.readFile file);
+    }) (builtins.readFile file);
 in
 {
-  ci-matrix = mkRegctlNuScript "ci-matrix" ./ci-matrix.nu;
-  push-multiarch = mkRegctlNuScript "push-multiarch" ./push-multiarch.nu;
+  ci-matrix = mkNuScript "ci-matrix" ./ci-matrix.nu [ pkgs.regctl ];
+  push-multiarch = mkNuScript "push-multiarch" ./push-multiarch.nu [ pkgs.regctl ];
 
   dive-archive = pkgs.writeShellApplication {
     name = "dive-archive";

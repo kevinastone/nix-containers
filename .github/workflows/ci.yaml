@@ -96,6 +96,9 @@ jobs:
       - name: Build ${{ matrix.container }} (${{ matrix.arch }}) image
         run: nix build ".#${{ matrix.container }}" --out-link result -L
 
+      - name: Smoke test ${{ matrix.container }} (${{ matrix.arch }})
+        run: nix run ".#${{ matrix.container }}.test" -- result
+
       - name: Prepare ${{ matrix.container }} (${{ matrix.arch }}) artifact
         if: github.event_name != 'pull_request'
         run: cp -L result "${{ matrix.arch }}.tar.gz"

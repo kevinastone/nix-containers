@@ -45,13 +45,16 @@ Do **not** commit any code changes using `git commit` without explicitly asking 
 
 - `flake.nix`: Entry point using `flake-parts` that wires up `nix/modules/`, `push-multiarch`, and `devShells.default`.
 - `nix/modules/`:
-  - `container-tools.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
+  - `container-tools/`:
+    - `default.nix`: `flake-parts` module exposing `overlays.default` (adding `pkgs.containerTools`, which wraps `pkgs.dockerTools` with `buildImage`/`buildLayeredImage`, standard OCI labels, `meta.platforms`, `passthru.tests`, and optional `package` defaults) and configuring `perSystem` `pkgs`.
+    - `smoke-test.nu`: Nushell runner wrapped by `containerTools.ociTest` / `containerTools.structureTest` (attached via `passthru.tests`).
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers` and `flake.lib.ci.{build,push}`.
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `yamlfmt`, `shfmt`, `shellcheck`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
+    - `test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
 - `nix/scripts/`:
   - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
   - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
