@@ -23,6 +23,7 @@
         ./nix/modules/container-tools
         ./nix/modules/containers.nix
         ./nix/modules/devshell.nix
+        ./nix/modules/nushell.nix
         ./nix/modules/scripts
         ./nix/modules/treefmt.nix
       ];

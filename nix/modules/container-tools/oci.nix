@@ -1,4 +1,4 @@
-{ lib }:
+{ lib, ... }:
 let
   defaultSource = "https://github.com/kevinastone/nix-containers";
 
@@ -50,10 +50,12 @@ let
     };
 in
 {
-  inherit
-    defaultSource
-    packageLicense
-    mkLabels
-    mkMeta
-    ;
+  perSystem._module.args.oci = {
+    inherit
+      defaultSource
+      packageLicense
+      mkLabels
+      mkMeta
+      ;
+  };
 }

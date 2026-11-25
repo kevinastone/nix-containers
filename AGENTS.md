@@ -49,7 +49,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 - `flake.nix`: Entry point using `flake-parts` that imports `nix/modules/*`.
 - `nix/modules/`:
   - `container-tools/`:
-    - `default.nix`: `flake-parts` module exposing `overlays.default` (`pkgs.writeNuApplication` and `pkgs.containerTools`) and configuring `perSystem` `pkgs`.
+    - `default.nix`: `flake-parts` module exposing `containerTools` via `perSystem` `_module.args`.
     - `oci.nix`: Pure OCI label and platform metadata helpers (`packageLicense`, `mkLabels`, `mkMeta`).
     - `build-image.nix`: Wraps `pkgs.dockerTools` (`buildImage`/`buildLayeredImage`) with `nonRootNss`, default contents/shell, and test suite wiring.
     - `tests/`:
@@ -58,6 +58,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
       - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
   - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
+  - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
     - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `push-multiarch`, `update-readme`, `dive-archive`) and `checks.readme-catalog`.
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.

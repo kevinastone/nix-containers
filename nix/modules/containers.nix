@@ -80,9 +80,11 @@ in
   };
 
   perSystem =
-    { pkgs, ... }:
+    { pkgs, containerTools, ... }:
     let
-      containers = lib.genAttrs containerNames (name: pkgs.callPackage (containersDir + "/${name}") { });
+      containers = lib.genAttrs containerNames (
+        name: pkgs.callPackage (containersDir + "/${name}") { inherit containerTools; }
+      );
     in
     {
       packages = lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers;

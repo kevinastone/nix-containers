@@ -4,11 +4,11 @@ let
 in
 {
   perSystem =
-    { pkgs, ... }:
+    { pkgs, writeNuApplication, ... }:
     let
       catalogFile = pkgs.writeText "catalog.json" (builtins.toJSON catalog);
 
-      update-readme = pkgs.writeNuApplication {
+      update-readme = writeNuApplication {
         name = "update-readme";
         file = ./update-readme.nu;
         extraArgs = [
@@ -23,13 +23,13 @@ in
       packages = {
         inherit update-readme;
 
-        ci-matrix = pkgs.writeNuApplication {
+        ci-matrix = writeNuApplication {
           name = "ci-matrix";
           file = ./ci-matrix.nu;
           runtimeInputs = [ pkgs.regctl ];
         };
 
-        push-multiarch = pkgs.writeNuApplication {
+        push-multiarch = writeNuApplication {
           name = "push-multiarch";
           file = ./push-multiarch.nu;
           runtimeInputs = [ pkgs.regctl ];
