@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  user: "65532:65532"
+  workdir: "/config"
+  exposedPorts: ["8080", "6881"]
+  volumes: ["/config"]
+  envVars:
+    - key: "QBT_CONFIRM_LEGAL_NOTICE"
+      value: "1"
+    - key: "HOME"
+      value: "/config"
+    - key: "XDG_CONFIG_HOME"
+      value: "/config"
+    - key: "XDG_DATA_HOME"
+      value: "/config"
+
+commandTests:
+  - name: "qbittorrent-nox version"
+    command: "qbittorrent-nox"
+    args: ["--version"]
+    expectedOutput: ["qBittorrent v"]
+
+fileExistenceTests:
+  - name: "/config exists"
+    path: "/config"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/home/nonroot exists"
+    path: "/home/nonroot"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true
