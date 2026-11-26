@@ -79,6 +79,12 @@ in
             syft
           ];
         };
+
+        update-packages = writeNuApplication {
+          name = "update-packages";
+          file = ./update-packages.nu;
+          runtimeInputs = [ pkgs.nix-update ];
+        };
       };
 
       checks.readme-catalog = pkgs.runCommand "check-readme-catalog" { } ''

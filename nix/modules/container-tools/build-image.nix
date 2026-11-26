@@ -211,6 +211,9 @@
             // {
               inherit closure extraTags;
             }
+            // lib.optionalAttrs (package != null) {
+              inherit package;
+            }
             // testSuite;
         });
     in

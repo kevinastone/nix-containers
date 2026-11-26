@@ -23,6 +23,7 @@
             just
             new-container
             nix-tree
+            nix-update
             nushell
             nvd
             pinact
@@ -30,6 +31,7 @@
             scan-image
             skopeo
             syft
+            update-packages
             update-readme
             zizmor
             # keep-sorted end

@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Update flake.lock
+name: Update Packages
 
 on:
   workflow_dispatch:
@@ -10,12 +10,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: update-flake
+  group: update-packages
   cancel-in-progress: true
 
 jobs:
-  update-flake:
-    name: Update Nix Flake Inputs
+  update-packages:
+    name: Update Flake Inputs & Custom Packages
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -33,12 +33,15 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Update flake.lock
+      - name: Update flake.lock and custom packages
         id: update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           nix flake update
-          if git diff --quiet flake.lock; then
-            echo "No flake.lock updates available."
+          nix run .#update-packages
+          if git diff --quiet flake.lock nix/; then
+            echo "No updates available."
             echo "updated=false" >> "$GITHUB_OUTPUT"
           else
             echo "updated=true" >> "$GITHUB_OUTPUT"
@@ -65,33 +68,33 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          branch="chore/update-flake-lock"
+          branch="chore/update-packages"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
-          git add flake.lock
-          git commit -m "chore(deps): update flake.lock"
+          git add flake.lock nix/
+          git commit -m "chore(deps): update flake.lock and packages"
           git push --force origin "$branch"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
           if gh pr view "$branch" >/dev/null 2>&1; then
-            gh pr edit "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
+            gh pr edit "$branch" --title "chore(deps): update flake.lock and packages" --body-file /tmp/pr-body.md
           else
-            gh pr create --base main --head "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
+            gh pr create --base main --head "$branch" --title "chore(deps): update flake.lock and packages" --body-file /tmp/pr-body.md
           fi
 
   build:
     name: ${{ matrix.container }}
-    needs: [update-flake]
-    if: needs.update-flake.outputs.has_changes == 'true'
+    needs: [update-packages]
+    if: needs.update-packages.outputs.has_changes == 'true'
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.update-flake.outputs.matrix) }}
+        include: ${{ fromJson(needs.update-packages.outputs.matrix) }}
     permissions:
       contents: read
     uses: ./.github/workflows/_build.yaml
     with:
-      ref: ${{ needs.update-flake.outputs.sha }}
+      ref: ${{ needs.update-packages.outputs.sha }}
       container: ${{ matrix.container }}
       arches_json: ${{ toJson(matrix.arches) }}

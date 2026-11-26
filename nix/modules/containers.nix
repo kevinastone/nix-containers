@@ -5,7 +5,9 @@
   ...
 }:
 let
+  repoRoot = toString ../..;
   containersDir = ../containers;
+  isLocalPackage = pkg: lib.hasPrefix repoRoot (pkg.meta.position or "");
 
   containerNames = builtins.attrNames (
     lib.filterAttrs (
@@ -58,6 +60,19 @@ in
 {
   flake.lib = {
     containers = containerNames;
+    updatePackages = lib.unique (
+      lib.concatMap (
+        container:
+        let
+          arches = containerArches container;
+          firstSystem = (builtins.head arches).system;
+          drv = config.flake.packages.${firstSystem}.${container};
+          pkg = drv.package or null;
+          extra = builtins.attrNames (drv.updatePackages or { });
+        in
+        lib.optional (pkg != null && isLocalPackage pkg) pkg.pname ++ extra
+      ) activeContainers
+    );
     inherit catalog;
     ci = map (
       container:
@@ -87,9 +102,22 @@ in
       containers = lib.genAttrs containerNames (
         name: pkgs.callPackage (containersDir + "/${name}") { inherit containerTools; }
       );
+      updatePackages = lib.foldl' (
+        acc: drv:
+        let
+          pkg = drv.package or null;
+          primary = lib.optionalAttrs (pkg != null && isLocalPackage pkg) {
+            ${pkg.pname} = pkg;
+          };
+        in
+        acc // primary // (drv.updatePackages or { })
+      ) { } (builtins.attrValues containers);
     in
     {
       packages = lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers;
-      legacyPackages.containerTests = lib.mapAttrs (_: drv: drv.test) containers;
+      legacyPackages = {
+        containerTests = lib.mapAttrs (_: drv: drv.test) containers;
+        inherit updatePackages;
+      };
     };
 }

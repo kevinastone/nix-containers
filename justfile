@@ -17,6 +17,11 @@ check:
 readme:
     nix run .#update-readme
 
+# Update flake inputs and custom packages
+update:
+    nix flake update
+    nix run .#update-packages
+
 # Pin GitHub Actions to full commit SHAs
 pin:
     pinact run .github/workflows/*.yaml .github/actions/*/*.yml
