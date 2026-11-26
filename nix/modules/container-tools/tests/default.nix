@@ -46,7 +46,7 @@
       normalizeConfigs = configs: if configs == null then [ ] else map toString (lib.toList configs);
 
       configFlags = lib.concatMap (c: [
-        "--add-flags"
+        "--append-flags"
         c
       ]);
 
