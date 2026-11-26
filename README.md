@@ -51,6 +51,7 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 | [`prowlarr`](nix/containers/prowlarr/README.md) | `ghcr.io/kevinastone/nix-containers/prowlarr` | `linux/amd64`, `linux/arm64` | Indexer manager/proxy built on the popular arr .net/reactjs base stack ([recipe](nix/containers/prowlarr/default.nix)) |
 | [`qbittorrent`](nix/containers/qbittorrent/README.md) | `ghcr.io/kevinastone/nix-containers/qbittorrent` | `linux/amd64`, `linux/arm64` | Featureful free software BitTorrent client ([recipe](nix/containers/qbittorrent/default.nix)) |
 | [`radarr`](nix/containers/radarr/README.md) | `ghcr.io/kevinastone/nix-containers/radarr` | `linux/amd64`, `linux/arm64` | Usenet/BitTorrent movie downloader ([recipe](nix/containers/radarr/default.nix)) |
+| [`sabnzbd`](nix/containers/sabnzbd/README.md) | `ghcr.io/kevinastone/nix-containers/sabnzbd` | `linux/amd64`, `linux/arm64` | Usenet NZB downloader, par2 repairer and auto extracting server ([recipe](nix/containers/sabnzbd/default.nix)) |
 | [`sonarr`](nix/containers/sonarr/README.md) | `ghcr.io/kevinastone/nix-containers/sonarr` | `linux/amd64`, `linux/arm64` | Smart PVR for newsgroup and bittorrent users ([recipe](nix/containers/sonarr/default.nix)) |
 <!-- END:CONTAINER_CATALOG -->
 
