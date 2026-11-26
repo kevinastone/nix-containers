@@ -13,6 +13,7 @@
         dockerTools
         bash
         coreutils
+        pigz
         tzdata
         ;
 
@@ -197,6 +198,13 @@
             ];
           };
 
+          stream = dockerTools.streamLayeredImage (removeAttrs builderArgs [ "compressor" ]);
+
+          streamArchive = pkgs.writeShellScript "${name}-stream-archive" ''
+            set -euo pipefail
+            ${stream} | ${lib.getExe pigz} -nT
+          '';
+
           testSuiteArgs = {
             inherit name runAsNonRoot;
             structureTestConfig = structureTest;
@@ -215,7 +223,13 @@
             (old.passthru or { })
             // passthru
             // {
-              inherit closure extraTags testSuiteArgs;
+              inherit
+                closure
+                extraTags
+                stream
+                streamArchive
+                testSuiteArgs
+                ;
             }
             // lib.optionalAttrs (package != null) {
               inherit package;

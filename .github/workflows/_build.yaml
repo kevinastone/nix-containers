@@ -38,21 +38,19 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Build ${{ inputs.container }} (${{ matrix.arch }}) image
-        run: nix build ".#${CONTAINER}" --out-link result -L
+      - name: Stream ${{ inputs.container }} (${{ matrix.arch }}) image archive
+        run: |
+          nix build ".#${CONTAINER}.streamArchive" --out-link stream-archive -L
+          ./stream-archive > "${ARCH}.tar.gz"
 
       - name: Smoke test ${{ inputs.container }} (${{ matrix.arch }})
-        run: nix run ".#${CONTAINER}.test" -- result
+        run: nix run ".#${CONTAINER}.test" -- "${ARCH}.tar.gz"
 
       - name: Inspect ${{ inputs.container }} (${{ matrix.arch }})
-        run: nix run .#inspect-image -- result --container "$CONTAINER" --arch "$ARCH" --base-ref origin/main
+        run: nix run .#inspect-image -- "${ARCH}.tar.gz" --container "$CONTAINER" --arch "$ARCH" --base-ref origin/main
 
       - name: Generate SBOM and scan ${{ inputs.container }} (${{ matrix.arch }})
-        run: nix run .#scan-image -- result --label "${CONTAINER} (${ARCH})" --sbom-output "${ARCH}.spdx.json"
-
-      - name: Prepare ${{ inputs.container }} (${{ matrix.arch }}) artifact
-        if: inputs.upload_artifacts
-        run: cp -L result "${ARCH}.tar.gz"
+        run: nix run .#scan-image -- "${ARCH}.tar.gz" --label "${CONTAINER} (${ARCH})" --sbom-output "${ARCH}.spdx.json"
 
       - name: Upload ${{ inputs.container }} (${{ matrix.arch }}) artifact
         if: inputs.upload_artifacts
