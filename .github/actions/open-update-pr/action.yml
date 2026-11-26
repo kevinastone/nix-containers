@@ -75,6 +75,7 @@ runs:
         TITLE: ${{ inputs.title }}
       run: |
         read -ra paths <<< "$PATHS"
+        gh auth setup-git
         git config user.name "$GIT_AUTHOR_NAME"
         git config user.email "$GIT_AUTHOR_EMAIL"
         git checkout -B "$BRANCH"

@@ -23,6 +23,8 @@ permissions:
 jobs:
   build:
     name: Build
+    permissions:
+      contents: read
     uses: ./.github/workflows/_build.yaml
     with:
       container: ${{ inputs.container }}

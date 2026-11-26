@@ -12,7 +12,6 @@
         programs.nixfmt.enable = true;
         programs.statix.enable = true;
         programs.deadnix.enable = true;
-        programs.actionlint.enable = true;
         programs.yamlfmt = {
           enable = true;
           settings.formatter.retain_line_breaks_single = true;
@@ -31,7 +30,29 @@
           nixfmt.priority = 3;
           shellcheck.priority = 1;
           shfmt.priority = 2;
-          actionlint.priority = 1;
+          action-validator = {
+            command = pkgs.lib.getExe pkgs.action-validator;
+            includes = [
+              ".github/workflows/*.yml"
+              ".github/workflows/*.yaml"
+              ".github/actions/**/*.yml"
+              ".github/actions/**/*.yaml"
+            ];
+            priority = 1;
+          };
+          ghalint = {
+            command = "${pkgs.writeShellScript "ghalint-check" ''
+              ${pkgs.lib.getExe pkgs.ghalint} run
+              ${pkgs.lib.getExe pkgs.ghalint} run-action
+            ''}";
+            includes = [
+              ".github/workflows/*.yml"
+              ".github/workflows/*.yaml"
+              ".github/actions/**/*.yml"
+              ".github/actions/**/*.yaml"
+            ];
+            priority = 1;
+          };
           zizmor = {
             command = pkgs.lib.getExe pkgs.zizmor;
             options = [

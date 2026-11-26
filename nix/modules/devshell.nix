@@ -14,10 +14,12 @@
           with self'.packages;
           [
             # keep-sorted start
+            action-validator
             container-structure-test
             cosign
             dive
             dive-archive
+            ghalint
             grype
             inspect-image
             just

@@ -85,7 +85,7 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
     - `scan-image.nu`: Nushell SBOM and vulnerability scanner (`scan-image [archive] [--sbom-output <path>]`) using `syft` (`nix-cataloger`) and `grype`.
     - `update-packages.nu`: Nushell wrapper around `nix-update` with per-package fault isolation for custom container packages.
     - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
-  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `zizmor`, `yamlfmt`, `shfmt`, `shellcheck`, `typos`).
+  - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `action-validator`, `ghalint`, `zizmor`, `yamlfmt`, `shfmt`, `shellcheck`, `typos`).
 - `nix/containers/`:
   - `ffmpeg/`:
     - `default.nix`: OCI image derivation for `ffmpeg`.
