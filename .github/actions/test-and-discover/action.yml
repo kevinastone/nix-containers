@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: Test and Discover
+description: Run flake checks and compute the changed-container CI matrix
+
+inputs:
+  force:
+    description: Force rebuild and push all containers even if unchanged
+    required: false
+    default: "false"
+
+outputs:
+  matrix:
+    description: JSON build matrix of changed containers
+    value: ${{ steps.discover.outputs.matrix }}
+  has_changes:
+    description: Whether any container derivations changed
+    value: ${{ steps.discover.outputs.has_changes }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Nix
+      uses: ./.github/actions/setup-nix
+
+    - name: Run Nix checks
+      shell: bash
+      run: nix flake check -L
+
+    - name: Login to GHCR
+      if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+      uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ github.token }}
+
+    - name: Discover changed containers
+      id: discover
+      shell: bash
+      env:
+        REPO: ghcr.io/${{ github.repository }}
+        FORCE: ${{ inputs.force }}
+      run: |
+        CI_JSON=$(nix eval --json .#lib.ci)
+        EXTRA_ARGS=()
+        if [ "$FORCE" = "true" ]; then
+          EXTRA_ARGS+=(--force)
+        fi
+        nix run .#ci-matrix -- "$REPO" "$CI_JSON" --github-output "$GITHUB_OUTPUT" "${EXTRA_ARGS[@]}"

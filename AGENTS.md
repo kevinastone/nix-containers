@@ -90,7 +90,8 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
     - `structure-test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
 - `.github/workflows/`:
-  - `ci.yaml`: Top-level CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only builds on PRs (`_build.yaml`) or full build-and-publish pipelines on non-PR runs (`_publish.yaml`).
+  - `pr.yaml`: Pull-request workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only `_build.yaml` checks (safe for fork PRs).
+  - `ci.yaml`: Main/dispatch CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out full build-and-publish pipelines (`_publish.yaml`).
   - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
   - `_publish.yaml`: Reusable per-container publish workflow that calls `_build.yaml` and publishes, signs, and attests the multi-arch OCI index on GHCR.
   - `update-flake.yaml`: Weekly scheduled workflow that updates `flake.lock` and opens/updates a PR with `nvd` runtime closure changelogs.

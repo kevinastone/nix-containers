@@ -127,7 +127,7 @@ nix fmt
 
 ## 🤖 CI/CD & Publishing
 
-The GitHub Actions workflows defined in [.github/workflows/ci.yaml](.github/workflows/ci.yaml), [.github/workflows/_build.yaml](.github/workflows/_build.yaml), and [.github/workflows/_publish.yaml](.github/workflows/_publish.yaml) automate validation and deployment:
+The GitHub Actions workflows defined in [.github/workflows/pr.yaml](.github/workflows/pr.yaml), [.github/workflows/ci.yaml](.github/workflows/ci.yaml), [.github/workflows/_build.yaml](.github/workflows/_build.yaml), and [.github/workflows/_publish.yaml](.github/workflows/_publish.yaml) automate validation and deployment:
 
 1. **Linting & Change Detection**: Runs `nix flake check`, evaluates `.#lib.ci` (which computes each container's supported architectures and Nix `drvPath`s), and filters out containers whose published `:main` OCI index already matches `dev.nix-containers.drv.<arch>`.
 2. **Independent Per-Container Pipelines**: Spawns an isolated `_build.yaml` check on PRs (read-only, fork-safe) or `_publish.yaml` pipeline on `main` per changed container so fast builds push immediately without waiting on slower containers.

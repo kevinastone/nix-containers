@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Pull Request
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      has_changes: ${{ steps.discover.outputs.has_changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Test and discover changed containers
+        id: discover
+        uses: ./.github/actions/test-and-discover
+
+  build:
+    name: ${{ matrix.container }}
+    needs: [test]
+    if: needs.test.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.test.outputs.matrix) }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/_build.yaml
+    with:
+      container: ${{ matrix.container }}
+      arches_json: ${{ toJson(matrix.arches) }}

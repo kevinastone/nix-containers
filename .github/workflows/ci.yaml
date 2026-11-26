@@ -5,25 +5,19 @@ on:
   push:
     branches:
       - main
-  pull_request:
   workflow_dispatch:
     inputs:
       force:
         description: "Force rebuild and push all containers even if unchanged"
         type: boolean
         default: false
-  workflow_call:
-    inputs:
-      ref:
-        type: string
-        default: ""
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   test:
@@ -39,56 +33,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.ref }}
           persist-credentials: false
 
-      - name: Setup Nix
-        uses: ./.github/actions/setup-nix
-
-      - name: Run Nix checks
-        run: nix flake check -L
-
-      - name: Login to GHCR
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ github.token }}
-
-      - name: Discover changed containers
+      - name: Test and discover changed containers
         id: discover
-        env:
-          REPO: ghcr.io/${{ github.repository }}
-          FORCE: ${{ inputs.force }}
-        run: |
-          CI_JSON=$(nix eval --json .#lib.ci)
-          EXTRA_ARGS=()
-          if [ "$FORCE" = "true" ]; then
-            EXTRA_ARGS+=(--force)
-          fi
-          nix run .#ci-matrix -- "$REPO" "$CI_JSON" --github-output "$GITHUB_OUTPUT" "${EXTRA_ARGS[@]}"
-
-  build:
-    name: ${{ matrix.container }}
-    needs: [test]
-    if: needs.test.outputs.has_changes == 'true' && github.event_name == 'pull_request'
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.test.outputs.matrix) }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/_build.yaml
-    with:
-      ref: ${{ inputs.ref }}
-      container: ${{ matrix.container }}
-      arches_json: ${{ toJson(matrix.arches) }}
+        uses: ./.github/actions/test-and-discover
+        with:
+          force: ${{ inputs.force }}
 
   publish:
     name: ${{ matrix.container }}
     needs: [test]
-    if: needs.test.outputs.has_changes == 'true' && github.event_name != 'pull_request'
+    if: needs.test.outputs.has_changes == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +56,6 @@ jobs:
       attestations: write
     uses: ./.github/workflows/_publish.yaml
     with:
-      ref: ${{ inputs.ref }}
       container: ${{ matrix.container }}
       version: ${{ matrix.version }}
       extra_tags_json: ${{ toJson(matrix.extraTags) }}
