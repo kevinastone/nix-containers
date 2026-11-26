@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, tzdata }:
 let
   defaultSource = "https://github.com/kevinastone/nix-containers";
 
@@ -52,15 +52,103 @@ let
     // lib.optionalAttrs (description != null) {
       inherit description;
     };
+
+  envKey = entry: builtins.head (lib.splitString "=" entry);
+
+  dedupEnv =
+    entries:
+    lib.foldr (
+      entry: acc: if builtins.any (x: envKey x == envKey entry) acc then acc else [ entry ] ++ acc
+    ) [ ] entries;
+
+  ociScalarKeys = [
+    "Entrypoint"
+    "Cmd"
+    "User"
+    "WorkingDir"
+    "StopSignal"
+  ];
+
+  mkConfig =
+    {
+      name,
+      tag,
+      package,
+      description,
+      source,
+      licenses,
+      runAsNonRoot,
+      user,
+      includeTzdata,
+      config,
+    }:
+    let
+      userEnv = dedupEnv config.Env;
+      hasEnvKey = key: builtins.any (e: envKey e == key) userEnv;
+
+      mergedEnv =
+        lib.optional (runAsNonRoot && user.home != null && !(hasEnvKey "HOME")) "HOME=${user.home}"
+        ++ lib.optional (includeTzdata && !(hasEnvKey "TZDIR")) "TZDIR=${tzdata}/share/zoneinfo"
+        ++ userEnv;
+
+      explicitScalars = lib.filterAttrs (k: v: builtins.elem k ociScalarKeys && v != null) config;
+
+      extraOciFields = removeAttrs config (
+        [
+          "_module"
+          "Env"
+          "ExposedPorts"
+          "Volumes"
+          "Labels"
+        ]
+        ++ ociScalarKeys
+      );
+
+      cleanConfig =
+        extraOciFields
+        // explicitScalars
+        // lib.optionalAttrs (config.ExposedPorts != { }) {
+          inherit (config) ExposedPorts;
+        }
+        // lib.optionalAttrs (config.Volumes != { }) {
+          inherit (config) Volumes;
+        };
+
+      defaultConfig =
+        lib.optionalAttrs (package != null && config.Entrypoint == null) {
+          Entrypoint = [ (lib.getExe package) ];
+        }
+        // lib.optionalAttrs (runAsNonRoot && config.User == null) {
+          User = "${toString user.uid}:${toString user.gid}";
+        };
+    in
+    defaultConfig
+    // cleanConfig
+    // {
+      Labels =
+        (mkLabels {
+          inherit
+            name
+            tag
+            package
+            description
+            source
+            licenses
+            ;
+        })
+        // config.Labels;
+    }
+    // lib.optionalAttrs (mergedEnv != [ ]) {
+      Env = mergedEnv;
+    };
 in
 {
-  perSystem._module.args.oci = {
-    inherit
-      defaultSource
-      formatLicenses
-      packageLicense
-      mkLabels
-      mkMeta
-      ;
-  };
+  inherit
+    defaultSource
+    formatLicenses
+    packageLicense
+    mkConfig
+    mkLabels
+    mkMeta
+    ;
 }

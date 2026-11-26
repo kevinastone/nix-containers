@@ -158,7 +158,6 @@ in
     {
       pkgs,
       containerTools,
-      mkTestSuite,
       ...
     }:
     let
@@ -245,7 +244,7 @@ in
                 in
                 {
                   inherit name;
-                  value = (mkTestSuite drv.testSuiteArgs).test;
+                  value = (containerTools.mkTestSuite drv.testSuiteArgs).test;
                 }
               ) activeContainers
             );

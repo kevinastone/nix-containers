@@ -1,20 +1,50 @@
 { lib, ... }:
 {
-  imports = [
-    ./oci.nix
-    ./options.nix
-    ./tests
-    ./build-image.nix
-  ];
-
   perSystem =
-    { config, ... }:
+    {
+      config,
+      pkgs,
+      writeNuApplication,
+      ...
+    }:
+    let
+      oci = import ./oci.nix {
+        inherit lib;
+        inherit (pkgs) tzdata;
+      };
+      inherit (import ./schema.nix { inherit lib; }) mkImageModule;
+      evalImageConfig = import ./eval.nix {
+        inherit lib oci mkImageModule;
+      };
+      rootfs = import ./rootfs.nix {
+        inherit lib;
+        inherit (pkgs) dockerTools;
+      };
+      tests = import ./tests {
+        inherit lib pkgs writeNuApplication;
+      };
+      buildLayeredImage = import ./build-image.nix {
+        inherit
+          lib
+          pkgs
+          oci
+          rootfs
+          evalImageConfig
+          ;
+        inherit (tests) mkTestSuite;
+      };
+    in
     {
       options.containerTools = lib.mkOption {
         type = lib.types.attrsOf lib.types.raw;
         default = { };
       };
 
-      config._module.args.containerTools = config.containerTools;
+      config = {
+        containerTools = tests // {
+          inherit buildLayeredImage;
+        };
+        _module.args.containerTools = config.containerTools;
+      };
     };
 }
