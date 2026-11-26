@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  user: "65532:65532"
+  envVars:
+    - key: "GNUPGHOME"
+      value: "/tmp"
+  exposedPorts: ["30000"]
+
+commandTests:
+  - name: "tofu version"
+    command: "tofu"
+    args: ["version"]
+    expectedOutput: ["OpenTofu v"]
+
+  - name: "tf-runner help"
+    command: "tf-runner"
+    args: ["--help"]
+    expectedError: ["grpc-port"]
+
+  - name: "tini version"
+    command: "tini"
+    args: ["--version"]
+    expectedOutput: ["tini version"]
+
+  - name: "git version"
+    command: "git"
+    args: ["--version"]
+    expectedOutput: ["git version"]
+
+  - name: "gpg version"
+    command: "gpg"
+    args: ["--version"]
+    expectedOutput: ["gpg \\(GnuPG\\)"]
+
+  - name: "ssh version"
+    command: "ssh"
+    args: ["-V"]
+    expectedError: ["OpenSSH_"]
+
+fileExistenceTests:
+  - name: "/home/runner exists"
+    path: "/home/runner"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true

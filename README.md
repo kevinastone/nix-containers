@@ -47,6 +47,7 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 | [`ffmpeg`](nix/containers/ffmpeg/README.md) | `ghcr.io/kevinastone/nix-containers/ffmpeg` | `linux/amd64`, `linux/arm64` | Minimal ffmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
 | [`keycloak`](nix/containers/keycloak/README.md) | `ghcr.io/kevinastone/nix-containers/keycloak` | `linux/amd64`, `linux/arm64` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
 | [`nut`](nix/containers/nut/README.md) | `ghcr.io/kevinastone/nix-containers/nut` | `linux/amd64`, `linux/arm64` | Network UPS Tools ([recipe](nix/containers/nut/default.nix)) |
+| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) | `ghcr.io/kevinastone/nix-containers/opentofu-runner` | `linux/amd64`, `linux/arm64` | Flux Tofu Controller runner with OpenTofu ([recipe](nix/containers/opentofu-runner/default.nix)) |
 <!-- END:CONTAINER_CATALOG -->
 
 ---
