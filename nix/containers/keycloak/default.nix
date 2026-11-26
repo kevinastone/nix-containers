@@ -20,6 +20,7 @@ let
 in
 containerTools.buildLayeredImage {
   package = keycloakWithMetrics;
+  category = "infrastructure";
   enableShell = true;
   contents = [
     gnugrep

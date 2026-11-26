@@ -5,6 +5,7 @@
 containerTools.buildLayeredImage {
   name = "prometheus-nut-exporter";
   package = prometheus-nut-exporter;
+  category = "monitoring";
   config = {
     ExposedPorts = {
       "9199/tcp" = { };

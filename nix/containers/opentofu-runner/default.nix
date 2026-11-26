@@ -15,6 +15,7 @@ in
 containerTools.buildLayeredImage {
   name = "opentofu-runner";
   package = tf-runner;
+  category = "infrastructure";
   description = "Flux Tofu Controller runner with OpenTofu";
   enableShell = true;
   user.name = "runner";

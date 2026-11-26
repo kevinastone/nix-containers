@@ -1,4 +1,4 @@
-def render-default-nix [name: string, pkg: string]: nothing -> string {
+def render-default-nix [name: string, pkg: string, category: string]: nothing -> string {
     let name_line = if $pkg == $name { "" } else { $"  name = \"($name)\";\n" }
     [
         "{"
@@ -6,6 +6,7 @@ def render-default-nix [name: string, pkg: string]: nothing -> string {
         $"  ($pkg),"
         "}:"
         $"containerTools.buildLayeredImage {\n($name_line)  package = ($pkg);"
+        $"  category = \"($category)\";"
         "  structureTest = ./structure-test.yaml;"
         "}"
         ""
@@ -57,6 +58,7 @@ def render-readme [name: string]: nothing -> string {
 def main [
     name: string # Container directory and image name (e.g. redis)
     --package (-p): string # Nixpkgs package attribute name (defaults to <name>)
+    --category (-c): string = "utilities" # Catalog category (infrastructure, databases, networking, security, monitoring, media, utilities)
     --containers-dir: path = "./nix/containers" # Base containers directory
 ] {
     if $name !~ '^[a-z0-9][a-z0-9._-]*$' {
@@ -76,7 +78,7 @@ def main [
     }
 
     mkdir $target_dir
-    render-default-nix $name $pkg | save ($target_dir | path join "default.nix")
+    render-default-nix $name $pkg $category | save ($target_dir | path join "default.nix")
     render-structure-test $name | save ($target_dir | path join "structure-test.yaml")
     render-readme $name | save ($target_dir | path join "README.md")
 

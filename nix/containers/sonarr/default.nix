@@ -4,6 +4,7 @@
 }:
 containerTools.buildLayeredImage {
   package = sonarr;
+  category = "media";
   dirs = {
     "/config" = { };
   };

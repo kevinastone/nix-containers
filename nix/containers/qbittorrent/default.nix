@@ -5,6 +5,7 @@
 containerTools.buildLayeredImage {
   name = "qbittorrent";
   package = qbittorrent-nox;
+  category = "media";
   dirs = {
     "/config" = { };
   };

@@ -9,7 +9,15 @@ map (
   let
     arches = containerArches container;
     drv = firstDrv container;
-    inherit (drv) sourceDir variantKey;
+    inherit (drv)
+      category
+      enableShell
+      imageTag
+      imageUser
+      runAsNonRoot
+      sourceDir
+      variantKey
+      ;
     variantRel =
       if variantKey != null && builtins.pathExists (containersDir + "/${sourceDir}/${variantKey}") then
         "${sourceDir}/${variantKey}"
@@ -30,7 +38,17 @@ map (
   in
   {
     name = container;
-    inherit docPath recipePath sourceDir;
+    parent = if variantKey != null then sourceDir else null;
+    version = imageTag;
+    user = imageUser;
+    inherit
+      category
+      docPath
+      enableShell
+      recipePath
+      runAsNonRoot
+      sourceDir
+      ;
     description = drv.meta.description or "";
     platforms = map (a: a.platform) arches;
   }

@@ -1,22 +1,99 @@
+const CATEGORIES = [
+    {id: "infrastructure", title: "Infrastructure & Identity"}
+    {id: "databases", title: "Databases & Storage"}
+    {id: "networking", title: "Networking"}
+    {id: "security", title: "Security"}
+    {id: "monitoring", title: "Monitoring & Hardware"}
+    {id: "media", title: "Media & Downloads"}
+    {id: "utilities", title: "Utilities"}
+]
+
+const DEFAULT_PLATFORMS = ["linux/amd64", "linux/arm64"]
+
+def format-user [user: string]: nothing -> string {
+    let parts = $user | split row ":"
+    if ($parts | length) == 2 and $parts.0 == $parts.1 {
+        $"`($parts.0)`"
+    } else {
+        $"`($user)`"
+    }
+}
+
 def render-row [c: record]: nothing -> string {
-    let link = $c.docPath
-    let platforms = $c.platforms | each { $"`($in)`" } | str join ", "
+    let is_variant = ($c | get -o parent) != null
+    let name_cell = if $is_variant {
+        $"↳ [`($c.name)`]\(($c.docPath)\)"
+    } else {
+        $"[`($c.name)`]\(($c.docPath)\)"
+    }
+    let user_cell = (format-user $c.user)
+    let shell_cell = if $c.enableShell { "`bash`" } else { "—" }
+    let platform_note = if $c.platforms != $DEFAULT_PLATFORMS {
+        let plats = $c.platforms | each { $"`($in)`" } | str join ", "
+        $" _\(($plats) only\)_"
+    } else {
+        ""
+    }
     let recipe = $"[recipe]\(($c.recipePath)\)"
     let desc = if ($c.description | is-not-empty) {
-        $"($c.description) \(($recipe)\)"
+        $"($c.description)($platform_note) \(($recipe)\)"
     } else {
-        $recipe
+        $"($recipe)($platform_note)"
     }
-    let image = $"ghcr.io/kevinastone/nix-containers/($c.name)"
-    $"| [`($c.name)`]\(($link)\) | [`($image)`]\(https://($image)\) | ($platforms) | ($desc) |"
+    $"| ($name_cell) | `($c.version)` | ($user_cell) | ($shell_cell) | ($desc) |"
+}
+
+def order-entries [entries: list<record>]: nothing -> list<record> {
+    let bases = $entries | where { ($in | get -o parent) == null } | sort-by name
+    let ordered = (
+        $bases
+        | each {|b|
+            let kids = $entries | where { ($in | get -o parent) == $b.name } | sort-by name
+            [$b, ...$kids]
+        }
+        | flatten
+    )
+    let placed = $ordered | get name
+    let orphans = $entries | where { $in.name not-in $placed } | sort-by name
+    [...$ordered, ...$orphans]
+}
+
+def render-section [title: string, entries: list<record>]: nothing -> string {
+    let ordered = (order-entries $entries)
+    [
+        $"### ($title)"
+        ""
+        "| Image | Version | User | Shell | Description |"
+        "| :--- | :--- | :--- | :---: | :--- |"
+        ...($ordered | each { render-row $in })
+    ]
+    | str join "\n"
 }
 
 def render-catalog [catalog: list<record>]: nothing -> string {
+    let known_ids = $CATEGORIES | get id
+    let known_sections = (
+        $CATEGORIES
+        | each {|cat|
+            let matching = $catalog | where category == $cat.id
+            if ($matching | is-empty) {
+                null
+            } else {
+                render-section $cat.title $matching
+            }
+        }
+        | compact
+    )
+    let other = $catalog | where { $in.category not-in $known_ids }
+    let all_sections = if ($other | is-empty) {
+        $known_sections
+    } else {
+        $known_sections | append (render-section "Other" $other)
+    }
+
     [
         "<!-- BEGIN:CONTAINER_CATALOG -->"
-        "| Container | Image | Platforms | Description |"
-        "| --- | --- | --- | --- |"
-        ...($catalog | each { render-row $in })
+        ($all_sections | str join "\n\n")
         "<!-- END:CONTAINER_CATALOG -->"
     ]
     | str join "\n"

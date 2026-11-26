@@ -5,6 +5,7 @@
 }:
 containerTools.buildLayeredImage {
   package = sabnzbd;
+  category = "media";
   licenses = [
     sabnzbd.meta.license
     unrar.meta.license

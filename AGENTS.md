@@ -61,10 +61,11 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 
 - `flake.nix`: Entry point using `flake-parts` that imports `nix/modules/*`.
 - `justfile`: Task runner recipes (`new`, `build`, `test`, `dive`, `inspect`, `fmt`, `check`, `readme`).
+- `docs/`: Documentation (`contributing.md`, `container-tools.md`, `architecture.md`).
 - `nix/modules/`:
   - `container-tools/`:
     - `default.nix`: `flake-parts` module wiring internal image builder helpers and exposing `containerTools` via `perSystem` `_module.args`.
-    - `schema.nix`: Declarative `mkOption` and submodule definitions for `buildLayeredImage` (`user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `config`, `variants`, etc.).
+    - `schema.nix`: Declarative `mkOption` and submodule definitions for `buildLayeredImage` (`category`, `user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `config`, `variants`, etc.).
     - `eval.nix`: `lib.evalModules` evaluator, variant option inheritance (`toVariantBaseArgs`), and user/name assertions.
     - `oci.nix`: Pure OCI label, platform metadata, `Env` deduplication, and runtime `Config` helpers (`mkLabels`, `mkMeta`, `mkConfig`).
     - `rootfs.nix`: `fakeNss` `/etc/passwd` + `/etc/group` builder and declarative directory `mkdir`/`chmod`/`chown` layer commands.

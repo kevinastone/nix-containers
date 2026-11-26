@@ -26,6 +26,7 @@ let
         package
         name
         tag
+        category
         description
         source
         licenses
@@ -139,8 +140,11 @@ let
         // cleanPassthru
         // {
           inherit
+            category
             closure
+            enableShell
             extraTags
+            runAsNonRoot
             stream
             streamArchive
             testSuiteArgs
@@ -148,6 +152,7 @@ let
             ;
           imageName = name;
           imageTag = tag;
+          imageUser = mergedConfig.User or "root";
         }
         // lib.optionalAttrs (package != null) {
           inherit package;

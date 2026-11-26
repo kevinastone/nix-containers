@@ -27,6 +27,7 @@ let
 in
 containerTools.buildLayeredImage {
   package = nut;
+  category = "monitoring";
   runAsNonRoot = false;
   enableShell = true;
   extraUsers.nutmon = nutmon;

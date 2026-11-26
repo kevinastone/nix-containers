@@ -4,6 +4,7 @@
 }:
 containerTools.buildLayeredImage {
   package = radarr;
+  category = "media";
   dirs = {
     "/config" = { };
   };

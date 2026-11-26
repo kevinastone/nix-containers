@@ -4,6 +4,16 @@ let
 
   containerNameType = types.strMatching "^[a-z0-9][a-z0-9._-]*$";
 
+  categoryType = types.enum [
+    "databases"
+    "infrastructure"
+    "media"
+    "monitoring"
+    "networking"
+    "security"
+    "utilities"
+  ];
+
   mkUserSubmodule =
     {
       defaultName ? null,
@@ -175,6 +185,11 @@ let
             else
               throw "containerTools: `tag` or `package` must be provided";
           description = "OCI image version tag.";
+        };
+        category = mkOption {
+          type = categoryType;
+          default = "utilities";
+          description = "Catalog category used to group related containers in documentation.";
         };
         description = mkOption {
           type = types.nullOr types.str;

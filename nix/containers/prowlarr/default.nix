@@ -4,6 +4,7 @@
 }:
 containerTools.buildLayeredImage {
   package = prowlarr;
+  category = "media";
   dirs = {
     "/config" = { };
   };
