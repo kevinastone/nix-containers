@@ -38,12 +38,12 @@ runs:
       id: discover
       shell: bash
       env:
-        REPO: ghcr.io/${{ github.repository }}
         FORCE: ${{ inputs.force }}
+        GITHUB_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        REPO: ghcr.io/${{ github.repository }}
       run: |
-        CI_JSON=$(nix eval --json .#lib.ci)
         EXTRA_ARGS=()
         if [ "$FORCE" = "true" ]; then
           EXTRA_ARGS+=(--force)
         fi
-        nix run .#ci-matrix -- "$REPO" "$CI_JSON" --github-output "$GITHUB_OUTPUT" "${EXTRA_ARGS[@]}"
+        nix run .#ci-matrix -- "$REPO" --github-output "$GITHUB_OUTPUT" "${EXTRA_ARGS[@]}"
