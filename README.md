@@ -28,34 +28,34 @@ ghcr.io/kevinastone/nix-containers/<image>:<tag>
 
 ## 🐳 Containers
 
-All images support `linux/amd64` and `linux/arm64` unless noted otherwise. Click an image name for usage and configuration docs.
+All images support `linux/amd64` and `linux/arm64` unless noted otherwise.
 
 <!-- BEGIN:CONTAINER_CATALOG -->
 ### Infrastructure & Identity
 
-| Image | Version | User | Shell | Description |
-| :--- | :--- | :--- | :---: | :--- |
-| [`keycloak`](nix/containers/keycloak/README.md) | `26.8.2` | `65532` | `bash` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
-| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) | `0.17.0` | `65532` | `bash` | Flux Tofu Controller runner with OpenTofu ([recipe](nix/containers/opentofu-runner/default.nix)) |
+| Container | Version | Description |
+| :--- | :--- | :--- |
+| `keycloak` ([readme](nix/containers/keycloak/README.md), [image](https://ghcr.io/kevinastone/nix-containers/keycloak), [recipe](nix/containers/keycloak/default.nix)) | `26.8.2` | Identity and access management for modern applications and services |
+| `opentofu-runner` ([readme](nix/containers/opentofu-runner/README.md), [image](https://ghcr.io/kevinastone/nix-containers/opentofu-runner), [recipe](nix/containers/opentofu-runner/default.nix)) | `0.17.0` | Flux Tofu Controller runner with OpenTofu |
 
 ### Monitoring & Hardware
 
-| Image | Version | User | Shell | Description |
-| :--- | :--- | :--- | :---: | :--- |
-| [`nut`](nix/containers/nut/README.md) | `2.8.5` | `root` | `bash` | Network UPS Tools ([recipe](nix/containers/nut/default.nix)) |
-| [`prometheus-nut-exporter`](nix/containers/prometheus-nut-exporter/README.md) | `3.2.5` | `65532` | — | Prometheus exporter for Network UPS Tools ([recipe](nix/containers/prometheus-nut-exporter/default.nix)) |
+| Container | Version | Description |
+| :--- | :--- | :--- |
+| `nut` ([readme](nix/containers/nut/README.md), [image](https://ghcr.io/kevinastone/nix-containers/nut), [recipe](nix/containers/nut/default.nix)) | `2.8.5` | Network UPS Tools |
+| `prometheus-nut-exporter` ([readme](nix/containers/prometheus-nut-exporter/README.md), [image](https://ghcr.io/kevinastone/nix-containers/prometheus-nut-exporter), [recipe](nix/containers/prometheus-nut-exporter/default.nix)) | `3.2.5` | Prometheus exporter for Network UPS Tools |
 
 ### Media & Downloads
 
-| Image | Version | User | Shell | Description |
-| :--- | :--- | :--- | :---: | :--- |
-| [`ffmpeg`](nix/containers/ffmpeg/README.md) | `9.0.2` | `65532` | — | Minimal headless FFmpeg container ([recipe](nix/containers/ffmpeg/default.nix)) |
-| ↳ [`ffmpeg-argo`](nix/containers/ffmpeg/README.md) | `9.0.2` | `65532` | `bash` | Minimal FFmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/argo/default.nix)) |
-| [`prowlarr`](nix/containers/prowlarr/README.md) | `3.0.2.5780` | `65532` | — | Indexer manager/proxy built on the popular arr .net/reactjs base stack ([recipe](nix/containers/prowlarr/default.nix)) |
-| [`qbittorrent`](nix/containers/qbittorrent/README.md) | `5.3.0` | `65532` | — | Featureful free software BitTorrent client ([recipe](nix/containers/qbittorrent/default.nix)) |
-| [`radarr`](nix/containers/radarr/README.md) | `7.0.3.10918` | `65532` | — | Usenet/BitTorrent movie downloader ([recipe](nix/containers/radarr/default.nix)) |
-| [`sabnzbd`](nix/containers/sabnzbd/README.md) | `5.1.3` | `65532` | — | Usenet NZB downloader, par2 repairer and auto extracting server ([recipe](nix/containers/sabnzbd/default.nix)) |
-| [`sonarr`](nix/containers/sonarr/README.md) | `5.0.0.2997` | `65532` | — | Smart PVR for newsgroup and bittorrent users ([recipe](nix/containers/sonarr/default.nix)) |
+| Container | Version | Description |
+| :--- | :--- | :--- |
+| `ffmpeg` ([readme](nix/containers/ffmpeg/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg), [recipe](nix/containers/ffmpeg/default.nix)) | `9.0.2` | Minimal headless FFmpeg container |
+| ↳ `ffmpeg-argo` ([readme](nix/containers/ffmpeg/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo), [recipe](nix/containers/ffmpeg/argo/default.nix)) | `9.0.2` | Minimal FFmpeg container with Argo Workflows progress reporting |
+| `prowlarr` ([readme](nix/containers/prowlarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/prowlarr), [recipe](nix/containers/prowlarr/default.nix)) | `3.0.2.5780` | Indexer manager/proxy built on the popular arr .net/reactjs base stack |
+| `qbittorrent` ([readme](nix/containers/qbittorrent/README.md), [image](https://ghcr.io/kevinastone/nix-containers/qbittorrent), [recipe](nix/containers/qbittorrent/default.nix)) | `5.3.0` | Featureful free software BitTorrent client |
+| `radarr` ([readme](nix/containers/radarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/radarr), [recipe](nix/containers/radarr/default.nix)) | `7.0.3.10918` | Usenet/BitTorrent movie downloader |
+| `sabnzbd` ([readme](nix/containers/sabnzbd/README.md), [image](https://ghcr.io/kevinastone/nix-containers/sabnzbd), [recipe](nix/containers/sabnzbd/default.nix)) | `5.1.3` | Usenet NZB downloader, par2 repairer and auto extracting server |
+| `sonarr` ([readme](nix/containers/sonarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/sonarr), [recipe](nix/containers/sonarr/default.nix)) | `5.0.0.2997` | Smart PVR for newsgroup and bittorrent users |
 <!-- END:CONTAINER_CATALOG -->
 
 ---

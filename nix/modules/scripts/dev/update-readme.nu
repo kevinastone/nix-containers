@@ -10,37 +10,28 @@ const CATEGORIES = [
 
 const DEFAULT_PLATFORMS = ["linux/amd64", "linux/arm64"]
 
-def format-user [user: string]: nothing -> string {
-    let parts = $user | split row ":"
-    if ($parts | length) == 2 and $parts.0 == $parts.1 {
-        $"`($parts.0)`"
-    } else {
-        $"`($user)`"
-    }
-}
-
 def render-row [c: record]: nothing -> string {
     let is_variant = ($c | get -o parent) != null
-    let name_cell = if $is_variant {
-        $"↳ [`($c.name)`]\(($c.docPath)\)"
-    } else {
-        $"[`($c.name)`]\(($c.docPath)\)"
-    }
-    let user_cell = (format-user $c.user)
-    let shell_cell = if $c.enableShell { "`bash`" } else { "—" }
+    let prefix = if $is_variant { "↳ " } else { "" }
+    let image_url = $"https://ghcr.io/kevinastone/nix-containers/($c.name)"
+    let links = (
+        [
+            (if $c.docPath != $c.recipePath { $"[readme]\(($c.docPath)\)" } else { null })
+            $"[image]\(($image_url)\)"
+            $"[recipe]\(($c.recipePath)\)"
+        ]
+        | compact
+        | str join ", "
+    )
+    let name_cell = $"($prefix)`($c.name)` \(($links)\)"
     let platform_note = if $c.platforms != $DEFAULT_PLATFORMS {
         let plats = $c.platforms | each { $"`($in)`" } | str join ", "
         $" _\(($plats) only\)_"
     } else {
         ""
     }
-    let recipe = $"[recipe]\(($c.recipePath)\)"
-    let desc = if ($c.description | is-not-empty) {
-        $"($c.description)($platform_note) \(($recipe)\)"
-    } else {
-        $"($recipe)($platform_note)"
-    }
-    $"| ($name_cell) | `($c.version)` | ($user_cell) | ($shell_cell) | ($desc) |"
+    let desc = $"($c.description)($platform_note)" | str trim
+    $"| ($name_cell) | `($c.version)` | ($desc) |"
 }
 
 def order-entries [entries: list<record>]: nothing -> list<record> {
@@ -63,8 +54,8 @@ def render-section [title: string, entries: list<record>]: nothing -> string {
     [
         $"### ($title)"
         ""
-        "| Image | Version | User | Shell | Description |"
-        "| :--- | :--- | :--- | :---: | :--- |"
+        "| Container | Version | Description |"
+        "| :--- | :--- | :--- |"
         ...($ordered | each { render-row $in })
     ]
     | str join "\n"
