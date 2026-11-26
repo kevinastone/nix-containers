@@ -75,13 +75,15 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `inspect-image`, `new-container`, `push-multiarch`, `scan-image`, `update-readme`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `inspect-image`, `new-container`, `push-multiarch`, `scan-image`, `update-packages`, `update-readme`) and `checks.readme-catalog`.
+    - `lib.nu`: Shared Nushell helpers (`linux-system`, `$GITHUB_OUTPUT` / `$GITHUB_STEP_SUMMARY` writers, temporary git worktrees, and exponential-backoff retries).
     - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
-    - `flake-update-report.nu`: CI/CD Nushell script that diffs changed containers across `flake.lock` updates and renders `nvd` runtime closure changelogs for PR descriptions.
+    - `flake-update-report.nu`: CI/CD Nushell script that diffs changed containers across branches/commits, renders `nvd` runtime closure changelogs, and syncs idempotent PR comments.
     - `inspect-image.nu`: CI/dev Nushell script (`inspect-image [archive] --container <name>`) that validates `dive --ci` layer efficiency, summarizes compressed/uncompressed sizes and top runtime store paths (`nix path-info`), and diffs runtime closures vs `main` with `nvd`.
     - `new-container.nu`: Nushell scaffolding script (`new-container <name> [--package <pkg>]`) generating `default.nix`, `structure-test.yaml`, and `README.md`.
-    - `push-multiarch.nu`: CI/CD Nushell script to assemble and push multi-architecture OCI manifests.
+    - `push-multiarch.nu`: CI/CD Nushell script (`stage` / `promote`) that stages multi-architecture OCI indexes by digest and promotes mutable tags atomically after signing/attestation.
     - `scan-image.nu`: Nushell SBOM and vulnerability scanner (`scan-image [archive] [--sbom-output <path>]`) using `syft` (`nix-cataloger`) and `grype`.
+    - `update-packages.nu`: Nushell wrapper around `nix-update` with per-package fault isolation for custom container packages.
     - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `actionlint`, `zizmor`, `yamlfmt`, `shfmt`, `shellcheck`, `typos`).
 - `nix/containers/`:
@@ -89,13 +91,14 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
     - `default.nix`: OCI image derivation for `ffmpeg`.
     - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
     - `structure-test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
-- `.github/workflows/`:
-  - `pr.yaml`: Pull-request workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only `_build.yaml` checks (safe for fork PRs).
-  - `ci.yaml`: Main/dispatch CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out full build-and-publish pipelines (`_publish.yaml`).
-  - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
-  - `_publish.yaml`: Reusable per-container publish workflow that calls `_build.yaml` and publishes, signs, and attests the multi-arch OCI index on GHCR.
-  - `update-flake.yaml`: Weekly scheduled workflow that updates `flake.lock` and opens/updates a PR with `nvd` runtime closure changelogs.
-  - `update-packages.yaml`: Weekly scheduled workflow that updates custom packages (`nix-update`) and opens/updates a PR with `nvd` runtime closure changelogs.
+- `.github/`:
+  - `renovate.jsonc`: Mend Renovate configuration managing weekly `flake.lock` updates and SHA-pinned GitHub Actions updates.
+  - `workflows/`:
+    - `pr.yaml`: Pull-request workflow that validates the flake, posts `nvd` closure changelogs on PRs, and fans out read-only `_build.yaml` checks (safe for fork PRs).
+    - `ci.yaml`: Main/dispatch CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out full build-and-publish pipelines (`_publish.yaml`).
+    - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
+    - `_publish.yaml`: Reusable per-container publish workflow that calls `_build.yaml`, stages the multi-arch OCI index by digest, signs and attests provenance + per-arch SBOMs, and atomically promotes mutable tags on GHCR.
+    - `update-packages.yaml`: Weekly scheduled workflow that updates custom packages (`nix-update`) and opens/updates a PR with `nvd` runtime closure changelogs.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).
 
 ---
