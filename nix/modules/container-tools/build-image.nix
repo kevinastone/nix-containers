@@ -197,11 +197,17 @@
             ];
           };
 
-          testSuite = mkTestSuite {
+          testSuiteArgs = {
             inherit name runAsNonRoot;
             structureTestConfig = structureTest;
-            extraTests = passthru.tests or { };
           };
+
+          testSuite = mkTestSuite (
+            testSuiteArgs
+            // {
+              extraTests = passthru.tests or { };
+            }
+          );
         in
         (dockerTools.buildLayeredImage builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // oci.mkMeta { inherit package description; } // meta;
@@ -209,7 +215,7 @@
             (old.passthru or { })
             // passthru
             // {
-              inherit closure extraTags;
+              inherit closure extraTags testSuiteArgs;
             }
             // lib.optionalAttrs (package != null) {
               inherit package;

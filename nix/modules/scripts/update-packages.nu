@@ -13,7 +13,11 @@ def main [
         return
     }
 
-    let system = (^nix eval --raw --impure --expr "builtins.currentSystem" | str trim)
+    let system = (
+        ^nix eval --raw --impure --expr "builtins.currentSystem"
+        | str trim
+        | str replace "-darwin" "-linux"
+    )
 
     # Nix 2.35+ `nix flake metadata` does not materialize the flake store path on disk;
     # force realization so `nix-update --flake` can evaluate it via `nix-instantiate`.
@@ -21,6 +25,6 @@ def main [
 
     for pkg in $targets {
         print $"Updating ($pkg)..."
-        ^nix-update --flake --use-github-releases $"legacyPackages.($system).updatePackages.($pkg)"
+        ^nix-update --flake --system $system --use-github-releases $"legacyPackages.($system).updatePackages.($pkg)"
     }
 }

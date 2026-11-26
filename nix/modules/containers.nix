@@ -97,11 +97,20 @@ in
   };
 
   perSystem =
-    { pkgs, containerTools, ... }:
+    {
+      pkgs,
+      containerTools,
+      mkTestSuite,
+      ...
+    }:
     let
+      inherit (pkgs.stdenv.hostPlatform) isLinux;
+      linuxSystem = "${pkgs.stdenv.hostPlatform.parsed.cpu.name}-linux";
+
       containers = lib.genAttrs containerNames (
         name: pkgs.callPackage (containersDir + "/${name}") { inherit containerTools; }
       );
+
       updatePackages = lib.foldl' (
         acc: drv:
         let
@@ -114,10 +123,35 @@ in
       ) { } (builtins.attrValues containers);
     in
     {
-      packages = lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers;
+      packages = lib.optionalAttrs isLinux (
+        lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers
+      );
+
       legacyPackages = {
-        containerTests = lib.mapAttrs (_: drv: drv.test) containers;
-        inherit updatePackages;
+        containerTests =
+          if isLinux then
+            lib.mapAttrs (_: drv: drv.test) containers
+          else
+            lib.listToAttrs (
+              map (
+                name:
+                let
+                  arches = containerArches name;
+                  targetSystem =
+                    if (config.flake.packages.${linuxSystem} or { }) ? ${name} then
+                      linuxSystem
+                    else
+                      (builtins.head arches).system;
+                  drv = config.flake.packages.${targetSystem}.${name};
+                in
+                {
+                  inherit name;
+                  value = (mkTestSuite drv.testSuiteArgs).test;
+                }
+              ) activeContainers
+            );
+
+        updatePackages = lib.optionalAttrs isLinux updatePackages;
       };
     };
 }
