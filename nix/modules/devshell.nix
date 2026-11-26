@@ -28,7 +28,6 @@
             nix-update
             nushell
             nvd
-            pinact
             regctl
             scan-image
             skopeo
