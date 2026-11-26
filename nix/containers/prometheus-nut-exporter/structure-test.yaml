@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  user: "65532:65532"
+  exposedPorts: ["9199"]
+
+commandTests:
+  - name: "nut_exporter help"
+    command: "nut_exporter"
+    args: ["--help"]
+    expectedError: ["usage: nut_exporter"]
+
+fileExistenceTests:
+  - name: "/home/nonroot exists"
+    path: "/home/nonroot"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true
