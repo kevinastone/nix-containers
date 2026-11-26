@@ -21,7 +21,7 @@
 
       imports = [
         ./nix/modules/container-tools
-        ./nix/modules/containers.nix
+        ./nix/modules/containers
         ./nix/modules/devshell.nix
         ./nix/modules/nixpkgs.nix
         ./nix/modules/nushell.nix
