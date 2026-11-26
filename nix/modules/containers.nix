@@ -39,9 +39,12 @@ let
     ) (builtins.readDir containersDir)
   );
 
+  # renovate: datasource=github-runners depName=ubuntu
+  ubuntuRunnerVersion = "26.04";
+
   ciRunners = {
-    x86_64-linux = "ubuntu-24.04";
-    aarch64-linux = "ubuntu-24.04-arm";
+    x86_64-linux = "ubuntu-${ubuntuRunnerVersion}";
+    aarch64-linux = "ubuntu-${ubuntuRunnerVersion}-arm";
   };
 
   ciArches = lib.sortOn (a: a.arch) (
