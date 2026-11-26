@@ -37,7 +37,6 @@ def main [
     --body-file: path # Optional file path to save the rendered markdown PR body
     --title: string = "Automated `flake.lock` update." # Header line for the rendered markdown report
     --run-url: string = "" # Optional GitHub Actions workflow run URL to include
-    --github-output: path # Optional $GITHUB_OUTPUT file path (writes matrix and has_changes)
 ] {
     let before_flake = $"path:($before_dir | path expand)"
     let after_flake = $"path:($after_dir | path expand)"
@@ -59,13 +58,12 @@ def main [
         | compact
     )
 
-    let matrix = $changed | each { $in.after }
-    let has_changes = $matrix | is-not-empty
+    let has_changes = $changed | is-not-empty
 
     let header = [
         $title
         ...(
-            if $run_url != "" { [$"\n> **Multi-arch build & test run**: ($run_url)"] } else { [] }
+            if $run_url != "" { [$"\n> **Update workflow run**: ($run_url)"] } else { [] }
         )
     ]
 
@@ -120,15 +118,5 @@ def main [
     let summary_path = $env.GITHUB_STEP_SUMMARY? | default ""
     if $summary_path != "" {
         $rendered | save --append $summary_path
-    }
-
-    if $github_output != null {
-        [
-            $"matrix=($matrix | to json -r)"
-            $"has_changes=($has_changes)"
-        ]
-        | str join "\n"
-        | $"($in)\n"
-        | save --append $github_output
     }
 }

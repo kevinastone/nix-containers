@@ -20,10 +20,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    outputs:
-      has_changes: ${{ steps.pr.outputs.has_changes }}
-      matrix: ${{ steps.pr.outputs.matrix }}
-      sha: ${{ steps.pr.outputs.sha }}
     steps:
       - name: Checkout # zizmor: ignore[artipacked] -- git push to PR branch requires persisted credentials
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -47,7 +43,6 @@ jobs:
           fi
 
       - name: Open or update Pull Request
-        id: pr
         if: steps.update.outputs.updated == 'true'
         uses: ./.github/actions/open-update-pr
         with:
@@ -55,19 +50,3 @@ jobs:
           paths: nix/
           title: "chore(deps): update custom packages"
           report-title: "Automated custom package update."
-
-  build:
-    name: ${{ matrix.container }}
-    needs: [update-packages]
-    if: needs.update-packages.outputs.has_changes == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        include: ${{ fromJson(needs.update-packages.outputs.matrix) }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/_build.yaml
-    with:
-      ref: ${{ needs.update-packages.outputs.sha }}
-      container: ${{ matrix.container }}
-      arches_json: ${{ toJson(matrix.arches) }}

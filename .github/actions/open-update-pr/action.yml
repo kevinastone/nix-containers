@@ -20,17 +20,6 @@ inputs:
     required: false
     default: ${{ github.token }}
 
-outputs:
-  has_changes:
-    description: Whether any container derivations changed
-    value: ${{ steps.report.outputs.has_changes }}
-  matrix:
-    description: JSON build matrix of changed containers
-    value: ${{ steps.report.outputs.matrix }}
-  sha:
-    description: Commit SHA pushed to the update PR branch
-    value: ${{ steps.pr.outputs.sha }}
-
 runs:
   using: composite
   steps:
@@ -39,7 +28,6 @@ runs:
       run: nix flake check -L
 
     - name: Generate changelog report
-      id: report
       shell: bash
       env:
         REPORT_TITLE: ${{ inputs.report-title }}
@@ -50,11 +38,9 @@ runs:
           /tmp/before . \
           --title "$REPORT_TITLE" \
           --body-file /tmp/pr-body.md \
-          --run-url "$RUN_URL" \
-          --github-output "$GITHUB_OUTPUT"
+          --run-url "$RUN_URL"
 
     - name: Open or update Pull Request
-      id: pr
       shell: bash
       env:
         BRANCH: ${{ inputs.branch }}
@@ -69,7 +55,6 @@ runs:
         git add -- "${paths[@]}"
         git commit -m "$TITLE"
         git push --force origin "$BRANCH"
-        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
         if gh pr view "$BRANCH" >/dev/null 2>&1; then
           gh pr edit "$BRANCH" --title "$TITLE" --body-file /tmp/pr-body.md
