@@ -19,8 +19,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,6 +38,8 @@ jobs:
       - name: Open or update Pull Request
         uses: ./.github/actions/open-update-pr
         with:
+          app-id: ${{ vars.APP_ID }}
+          app-private-key: ${{ secrets.APP_PRIVATE_KEY }}
           branch: chore/update-packages
           paths: nix/
           title: "chore(deps): update custom packages"
