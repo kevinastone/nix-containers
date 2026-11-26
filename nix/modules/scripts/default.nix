@@ -26,7 +26,7 @@ in
 
       update-readme = writeNuApplication {
         name = "update-readme";
-        file = ./update-readme.nu;
+        file = ./dev/update-readme.nu;
         extraArgs = [
           "--add-flags"
           "--catalog-json"
@@ -34,21 +34,18 @@ in
           "${catalogFile}"
         ];
       };
-    in
-    {
-      packages = {
-        inherit dive-archive update-readme;
 
+      ciPackages = {
         ci-matrix = writeNuApplication {
           name = "ci-matrix";
-          file = ./ci-matrix.nu;
+          file = ./ci/ci-matrix.nu;
           includes = sharedLib;
           runtimeInputs = [ pkgs.regctl ];
         };
 
         flake-update-report = writeNuApplication {
           name = "flake-update-report";
-          file = ./flake-update-report.nu;
+          file = ./ci/flake-update-report.nu;
           includes = sharedLib;
           runtimeInputs = with pkgs; [
             gh
@@ -57,9 +54,30 @@ in
           ];
         };
 
+        push-multiarch = writeNuApplication {
+          name = "push-multiarch";
+          file = ./ci/push-multiarch.nu;
+          includes = sharedLib;
+          runtimeInputs = [ pkgs.regctl ];
+        };
+
+        update-packages = writeNuApplication {
+          name = "update-packages";
+          file = ./ci/update-packages.nu;
+          includes = sharedLib;
+          runtimeInputs = with pkgs; [
+            git
+            nix-update
+          ];
+        };
+      };
+
+      devPackages = {
+        inherit dive-archive update-readme;
+
         inspect-image = writeNuApplication {
           name = "inspect-image";
-          file = ./inspect-image.nu;
+          file = ./dev/inspect-image.nu;
           includes = sharedLib;
           runtimeInputs = [
             dive-archive
@@ -70,19 +88,12 @@ in
 
         new-container = writeNuApplication {
           name = "new-container";
-          file = ./new-container.nu;
-        };
-
-        push-multiarch = writeNuApplication {
-          name = "push-multiarch";
-          file = ./push-multiarch.nu;
-          includes = sharedLib;
-          runtimeInputs = [ pkgs.regctl ];
+          file = ./dev/new-container.nu;
         };
 
         scan-image = writeNuApplication {
           name = "scan-image";
-          file = ./scan-image.nu;
+          file = ./dev/scan-image.nu;
           includes = sharedLib;
           runtimeInputs = with pkgs; [
             grype
@@ -90,17 +101,10 @@ in
             syft
           ];
         };
-
-        update-packages = writeNuApplication {
-          name = "update-packages";
-          file = ./update-packages.nu;
-          includes = sharedLib;
-          runtimeInputs = with pkgs; [
-            git
-            nix-update
-          ];
-        };
       };
+    in
+    {
+      packages = ciPackages // devPackages;
 
       checks.readme-catalog = pkgs.runCommand "check-readme-catalog" { } ''
         ${pkgs.lib.getExe update-readme} --check ${../../../README.md}

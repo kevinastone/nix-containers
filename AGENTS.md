@@ -63,28 +63,38 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
 - `justfile`: Task runner recipes (`new`, `build`, `test`, `dive`, `inspect`, `fmt`, `check`, `readme`).
 - `nix/modules/`:
   - `container-tools/`:
-    - `default.nix`: `flake-parts` module exposing `containerTools` via `perSystem` `_module.args`.
-    - `oci.nix`: Pure OCI label and platform metadata helpers (`packageLicense`, `mkLabels`, `mkMeta`).
-    - `options.nix`: Typed `lib.evalModules` / `mkOption` schema for `buildLayeredImage` (`user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `variants`, etc.).
-    - `build-image.nix`: Wraps `pkgs.dockerTools.buildLayeredImage` with declarative users/dirs, default contents/shell, variant builds, and test suite wiring.
+    - `default.nix`: `flake-parts` module wiring internal image builder helpers and exposing `containerTools` via `perSystem` `_module.args`.
+    - `schema.nix`: Declarative `mkOption` and submodule definitions for `buildLayeredImage` (`user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `config`, `variants`, etc.).
+    - `eval.nix`: `lib.evalModules` evaluator, variant option inheritance (`toVariantBaseArgs`), and user/name assertions.
+    - `oci.nix`: Pure OCI label, platform metadata, `Env` deduplication, and runtime `Config` helpers (`mkLabels`, `mkMeta`, `mkConfig`).
+    - `rootfs.nix`: `fakeNss` `/etc/passwd` + `/etc/group` builder and declarative directory `mkdir`/`chmod`/`chown` layer commands.
+    - `build-image.nix`: Thin wrapper around `pkgs.dockerTools.buildLayeredImage`, `closureInfo`, `streamLayeredImage`, variant builds, and test suite wiring.
     - `tests/`:
-      - `default.nix`: Test suite wiring (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
+      - `default.nix`: Test suite builder (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
       - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
       - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
-  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, expands `variants`, filters by `meta.platforms`, exposes host-native `legacyPackages.containerTests`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
+  - `containers/`:
+    - `default.nix`: `flake-parts` module wiring container discovery, `catalog`, `ci`, and `updates` into `flake.lib` and `perSystem`.
+    - `discovery.nix`: Auto-discovers `nix/containers/*/default.nix`, expands `variants`, and filters by `meta.platforms`.
+    - `catalog.nix`: Computes `flake.lib.catalog` (`docPath`, `recipePath`, `platforms`, `description`).
+    - `ci.nix`: GitHub Actions runner pins (`ubuntuRunnerVersion`), SemVer tag expansion, and `flake.lib.ci`.
+    - `updates.nix`: Custom package discovery (`flake.lib.updatePackageSpecs` and `legacyPackages.updatePackages`) for `nix-update`.
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
+  - `nixpkgs.nix`: `flake-parts` module configuring `perSystem` `pkgs` (`allowUnfreePredicate`).
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
-    - `default.nix`: `flake-parts` module exposing shared CI/dev packages (`ci-matrix`, `dive-archive`, `flake-update-report`, `inspect-image`, `new-container`, `push-multiarch`, `scan-image`, `update-packages`, `update-readme`) and `checks.readme-catalog`.
+    - `default.nix`: `flake-parts` module exposing CI and dev CLI packages plus `checks.readme-catalog`.
     - `lib.nu`: Shared Nushell helpers (`linux-system`, `$GITHUB_OUTPUT` / `$GITHUB_STEP_SUMMARY` writers, temporary git worktrees, and exponential-backoff retries).
-    - `ci-matrix.nu`: CI/CD Nushell script that filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
-    - `flake-update-report.nu`: CI/CD Nushell script that diffs changed containers across branches/commits, renders `nvd` runtime closure changelogs, and syncs idempotent PR comments.
-    - `inspect-image.nu`: CI/dev Nushell script (`inspect-image [archive] --container <name>`) that validates `dive --ci` layer efficiency, summarizes compressed/uncompressed sizes and top runtime store paths (`nix path-info`), and diffs runtime closures vs `main` with `nvd`.
-    - `new-container.nu`: Nushell scaffolding script (`new-container <name> [--package <pkg>]`) generating `default.nix`, `structure-test.yaml`, and `README.md`.
-    - `push-multiarch.nu`: CI/CD Nushell script (`stage` / `promote`) that stages multi-architecture OCI indexes by digest and promotes mutable tags atomically after signing/attestation.
-    - `scan-image.nu`: Nushell SBOM and vulnerability scanner (`scan-image [archive] [--sbom-output <path>]`) using `syft` (`nix-cataloger`) and `grype`.
-    - `update-packages.nu`: Nushell wrapper around `nix-update` with per-package fault isolation for custom container packages.
-    - `update-readme.nu`: Nushell script (`nix run .#update-readme`) that renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
+    - `ci/`:
+      - `ci-matrix.nu`: Filters the build/push matrix against GHCR's `dev.nix-containers.drv.<arch>` annotations to skip unchanged containers.
+      - `flake-update-report.nu`: Diffs changed containers across branches/commits, renders `nvd` runtime closure changelogs, and syncs idempotent PR comments.
+      - `push-multiarch.nu`: Stages multi-architecture OCI indexes by digest (`stage`) and promotes mutable tags atomically (`promote`) after signing/attestation.
+      - `update-packages.nu`: Wrapper around `nix-update` with per-package fault isolation for custom container packages.
+    - `dev/`:
+      - `inspect-image.nu`: Validates `dive --ci` layer efficiency, summarizes sizes and top runtime store paths (`nix path-info`), and diffs closures vs `main` with `nvd`.
+      - `new-container.nu`: Scaffolds `nix/containers/<name>/{default.nix,structure-test.yaml,README.md}`.
+      - `scan-image.nu`: Generates SPDX SBOMs (`syft` `nix-cataloger`) and scans for vulnerabilities (`grype`).
+      - `update-readme.nu`: Renders and syncs the `README.md` container catalog table from `flake.lib.catalog` (validated by `checks.readme-catalog`).
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `action-validator`, `ghalint`, `zizmor`, `yamlfmt`, `shfmt`, `shellcheck`, `typos`).
 - `nix/containers/`:
   - `ffmpeg/`:

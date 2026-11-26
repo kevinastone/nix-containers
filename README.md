@@ -76,7 +76,7 @@ This creates `nix/containers/<name>/` (`default.nix`, `structure-test.yaml`, and
 3. Run `just readme` (if `description` changed), `just fmt`, and `just check`.
 4. Build and smoke-test locally with `just test <name>` (works on both Linux and macOS with a Linux builder + OrbStack/Docker/Podman).
 
-`nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, expands any configured `variants`, exposes them as flake packages on their supported platforms, and computes `lib.ci` for GitHub Actions.
+`nix/modules/containers` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, expands any configured `variants`, exposes them as flake packages on their supported platforms, and computes `lib.ci` for GitHub Actions.
 
 ### Container Variants
 
