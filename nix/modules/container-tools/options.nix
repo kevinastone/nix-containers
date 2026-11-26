@@ -68,9 +68,16 @@ let
       };
     };
 
+  licenseType = types.oneOf [
+    types.str
+    (types.attrsOf types.anything)
+    (types.listOf licenseType)
+  ];
+
   mkImageModule =
     {
       defaultSource,
+      formatLicenses,
       packageLicense,
     }:
     { config, ... }:
@@ -116,9 +123,10 @@ let
           description = "OCI org.opencontainers.image.source label.";
         };
         licenses = mkOption {
-          type = types.nullOr types.str;
+          type = types.nullOr licenseType;
           default = if config.package != null then packageLicense config.package else null;
-          description = "SPDX license expression for org.opencontainers.image.licenses.";
+          apply = v: if v == null then null else formatLicenses v;
+          description = "SPDX license expression or nixpkgs meta.license value(s) for org.opencontainers.image.licenses.";
         };
         extraTags = mkOption {
           type = types.listOf (types.strMatching "^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$");
@@ -205,7 +213,7 @@ let
       evaluated = lib.evalModules {
         modules = [
           (mkImageModule {
-            inherit (oci) defaultSource packageLicense;
+            inherit (oci) defaultSource formatLicenses packageLicense;
           })
           { config = args; }
         ];

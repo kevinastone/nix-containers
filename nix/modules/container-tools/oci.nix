@@ -2,15 +2,19 @@
 let
   defaultSource = "https://github.com/kevinastone/nix-containers";
 
-  packageLicense =
-    pkg:
+  formatLicenses =
+    input:
     let
-      raw = lib.flatten (lib.toList (pkg.meta.license or [ ]));
-      ids = lib.filter (x: x != null) (
-        map (l: if builtins.isString l then l else (l.spdxId or l.shortName or null)) raw
+      raw = lib.flatten (lib.toList input);
+      ids = lib.unique (
+        lib.filter (x: x != null && x != "") (
+          map (l: if builtins.isString l then l else (l.spdxId or l.shortName or null)) raw
+        )
       );
     in
     if ids != [ ] then lib.concatStringsSep " AND " ids else null;
+
+  packageLicense = pkg: formatLicenses (pkg.meta.license or [ ]);
 
   mkLabels =
     {
@@ -53,6 +57,7 @@ in
   perSystem._module.args.oci = {
     inherit
       defaultSource
+      formatLicenses
       packageLicense
       mkLabels
       mkMeta
