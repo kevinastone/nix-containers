@@ -14,6 +14,8 @@ metadataTest:
       value: "External"
     - key: "SONARR__UPDATE__AUTOMATICALLY"
       value: "false"
+    - key: "SONARR__UPDATE__BRANCH"
+      value: "develop"
 
 commandTests:
   - name: "Sonarr help"
