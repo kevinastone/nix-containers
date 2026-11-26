@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Update Packages
+name: Update Custom Packages
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   update-packages:
-    name: Update Flake Inputs & Custom Packages
+    name: Update Custom Packages
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -33,15 +33,14 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Update flake.lock and custom packages
+      - name: Update custom packages
         id: update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          nix flake update
           nix run .#update-packages
-          if git diff --quiet flake.lock nix/; then
-            echo "No updates available."
+          if git diff --quiet nix/; then
+            echo "No custom package updates available."
             echo "updated=false" >> "$GITHUB_OUTPUT"
           else
             echo "updated=true" >> "$GITHUB_OUTPUT"
@@ -58,6 +57,7 @@ jobs:
           git worktree add --detach /tmp/before HEAD
           nix run .#flake-update-report -- \
             /tmp/before . \
+            --title "Automated custom package update." \
             --body-file /tmp/pr-body.md \
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
             --github-output "$GITHUB_OUTPUT"
@@ -72,15 +72,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -B "$branch"
-          git add flake.lock nix/
-          git commit -m "chore(deps): update flake.lock and packages"
+          git add nix/
+          git commit -m "chore(deps): update custom packages"
           git push --force origin "$branch"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
           if gh pr view "$branch" >/dev/null 2>&1; then
-            gh pr edit "$branch" --title "chore(deps): update flake.lock and packages" --body-file /tmp/pr-body.md
+            gh pr edit "$branch" --title "chore(deps): update custom packages" --body-file /tmp/pr-body.md
           else
-            gh pr create --base main --head "$branch" --title "chore(deps): update flake.lock and packages" --body-file /tmp/pr-body.md
+            gh pr create --base main --head "$branch" --title "chore(deps): update custom packages" --body-file /tmp/pr-body.md
           fi
 
   build:

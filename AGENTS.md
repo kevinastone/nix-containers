@@ -93,7 +93,8 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `ci.yaml`: Top-level CI/CD workflow that validates the flake, detects changed containers via `ci-matrix`, and fans out read-only builds on PRs (`_build.yaml`) or full build-and-publish pipelines on non-PR runs (`_publish.yaml`).
   - `_build.yaml`: Read-only reusable workflow that builds and smoke-tests a container across its supported architectures (`amd64`/`arm64`) with `contents: read` (safe for fork PRs).
   - `_publish.yaml`: Reusable per-container publish workflow that calls `_build.yaml` and publishes, signs, and attests the multi-arch OCI index on GHCR.
-  - `update-packages.yaml`: Weekly scheduled workflow that updates `flake.lock` and custom packages (`nix-update`), opens/updates a PR with `nvd` runtime closure changelogs, and runs multi-arch `_build.yaml` validation.
+  - `update-flake.yaml`: Weekly scheduled workflow that updates `flake.lock`, opens/updates a PR with `nvd` runtime closure changelogs, and runs multi-arch `_build.yaml` validation.
+  - `update-packages.yaml`: Weekly scheduled workflow that updates custom packages (`nix-update`), opens/updates a PR with `nvd` runtime closure changelogs, and runs multi-arch `_build.yaml` validation.
 - `AGENTS.md`: Onboarding guidelines for developers and AI agents (this file).
 
 ---

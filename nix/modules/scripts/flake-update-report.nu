@@ -35,6 +35,7 @@ def main [
     before_dir: path # Path to baseline flake checkout (e.g. main worktree)
     after_dir: path = "." # Path to updated flake checkout
     --body-file: path # Optional file path to save the rendered markdown PR body
+    --title: string = "Automated `flake.lock` update." # Header line for the rendered markdown report
     --run-url: string = "" # Optional GitHub Actions workflow run URL to include
     --github-output: path # Optional $GITHUB_OUTPUT file path (writes matrix and has_changes)
 ] {
@@ -62,7 +63,7 @@ def main [
     let has_changes = $matrix | is-not-empty
 
     let header = [
-        "Automated `flake.lock` update."
+        $title
         ...(
             if $run_url != "" { [$"\n> **Multi-arch build & test run**: ($run_url)"] } else { [] }
         )
