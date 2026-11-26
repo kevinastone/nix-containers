@@ -1,12 +1,3 @@
-def linux-system [arch: string]: nothing -> string {
-    let a = if $arch != "" { $arch } else { $nu.os-info.arch }
-    match $a {
-        "amd64" | "x86_64" => "x86_64-linux"
-        "arm64" | "aarch64" => "aarch64-linux"
-        _ => $"($a)-linux"
-    }
-}
-
 def render-nvd-section [
     base_dir: string
     system: string
@@ -51,12 +42,40 @@ def render-nvd-section [
     ]
 }
 
+def compute-nvd-lines [
+    base_dir: string
+    base_ref: string
+    system: string
+    container: string
+    head_closure: string
+]: nothing -> list<string> {
+    if $base_dir != "" {
+        return (render-nvd-section $base_dir $system $container $head_closure)
+    }
+    if $base_ref == "" {
+        return []
+    }
+    let resolved = (resolve-git-ref $base_ref)
+    if $resolved == "" {
+        return []
+    }
+    let head_sha = (^git rev-parse HEAD | str trim)
+    let base_sha = (^git rev-parse $resolved | str trim)
+    if $head_sha == $base_sha {
+        return []
+    }
+    with-git-worktree $base_sha {|wt_dir|
+        render-nvd-section $wt_dir $system $container $head_closure
+    }
+}
+
 # Inspect a built container archive (`dive --ci`, sizes, top runtime store paths, and optional `nvd` diff).
 def main [
     archive: path = "./result" # Path to the built image archive (.tar.gz or .tar)
     --container: string # Container name (e.g. ffmpeg)
     --arch: string = "" # Target architecture (amd64 or arm64; defaults to host arch)
-    --base-dir: string = "" # Optional baseline flake checkout (e.g. main worktree) for `nvd` diff
+    --base-dir: string = "" # Optional baseline flake checkout path for `nvd` diff
+    --base-ref: string = "" # Optional git ref (e.g. origin/main) to auto-checkout in a temporary worktree for `nvd` diff
 ] {
     if $container == null or $container == "" {
         error make {msg: "--container is required"}
@@ -100,6 +119,13 @@ def main [
         )
 
         let title = if $arch != "" { $"`($container)` \(`($arch)`\)" } else { $"`($container)`" }
+        let nvd_lines = ((compute-nvd-lines
+            $base_dir
+            $base_ref
+            $system
+            $container
+            $closure
+        ))
 
         [
             $"## 📦 ($title)"
@@ -120,7 +146,7 @@ def main [
             "```"
             ""
             "</details>"
-            ...(render-nvd-section $base_dir $system $container $closure)
+            ...$nvd_lines
             ""
         ]
         | str join "\n"
@@ -129,9 +155,5 @@ def main [
     }
 
     print $report
-
-    let summary_path = $env.GITHUB_STEP_SUMMARY? | default ""
-    if $summary_path != "" {
-        $report | save --append $summary_path
-    }
+    append-step-summary $report
 }

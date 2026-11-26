@@ -1,6 +1,7 @@
 { config, ... }:
 let
   inherit (config.flake.lib) catalog;
+  sharedLib = [ ./lib.nu ];
 in
 {
   perSystem =
@@ -41,20 +42,28 @@ in
         ci-matrix = writeNuApplication {
           name = "ci-matrix";
           file = ./ci-matrix.nu;
+          includes = sharedLib;
           runtimeInputs = [ pkgs.regctl ];
         };
 
         flake-update-report = writeNuApplication {
           name = "flake-update-report";
           file = ./flake-update-report.nu;
-          runtimeInputs = [ pkgs.nvd ];
+          includes = sharedLib;
+          runtimeInputs = with pkgs; [
+            gh
+            git
+            nvd
+          ];
         };
 
         inspect-image = writeNuApplication {
           name = "inspect-image";
           file = ./inspect-image.nu;
+          includes = sharedLib;
           runtimeInputs = [
             dive-archive
+            pkgs.git
             pkgs.nvd
           ];
         };
@@ -67,12 +76,14 @@ in
         push-multiarch = writeNuApplication {
           name = "push-multiarch";
           file = ./push-multiarch.nu;
+          includes = sharedLib;
           runtimeInputs = [ pkgs.regctl ];
         };
 
         scan-image = writeNuApplication {
           name = "scan-image";
           file = ./scan-image.nu;
+          includes = sharedLib;
           runtimeInputs = with pkgs; [
             grype
             gzip
@@ -83,7 +94,11 @@ in
         update-packages = writeNuApplication {
           name = "update-packages";
           file = ./update-packages.nu;
-          runtimeInputs = [ pkgs.nix-update ];
+          includes = sharedLib;
+          runtimeInputs = with pkgs; [
+            git
+            nix-update
+          ];
         };
       };
 

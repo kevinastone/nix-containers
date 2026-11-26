@@ -40,8 +40,7 @@ def main [
         print $"Cataloged ($pkg_count) packages in ($title)"
         print $scan_out
 
-        let summary_path = $env.GITHUB_STEP_SUMMARY? | default ""
-        if $summary_path != "" {
+        append-step-summary (
             [
                 $"### Vulnerability Scan: `($title)`"
                 ""
@@ -53,8 +52,7 @@ def main [
                 ""
             ]
             | str join "\n"
-            | save --append $summary_path
-        }
+        )
     } finally {
         rm -rf $tmp_dir
     }
