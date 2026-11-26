@@ -1,12 +1,21 @@
-# `ffmpeg`
+# `ffmpeg` & `ffmpeg-argo`
 
-- **Image**: `ghcr.io/kevinastone/nix-containers/ffmpeg`
-- **Recipe**: [default.nix](default.nix)
-- **Tests**: [structure-test.yaml](structure-test.yaml)
+- **Images**:
+  - `ghcr.io/kevinastone/nix-containers/ffmpeg` — minimal, shell-less `ffmpeg-headless` container
+  - `ghcr.io/kevinastone/nix-containers/ffmpeg-argo` — adds `bash`, `coreutils`, `jq`, and `argo-ffmpeg-progress` for Argo Workflows
+- **Recipes**: [default.nix](default.nix), [argo/default.nix](argo/default.nix)
+- **Tests**: [structure-test.yaml](structure-test.yaml), [argo/structure-test.yaml](argo/structure-test.yaml)
 
-A minimal, non-root (`65532:65532`) `ffmpeg` container designed for cloud-native transcoding pipelines (such as Argo Workflows). Includes `ffmpeg-headless`, `bash`, `jq`, `coreutils`, and the custom `argo-ffmpeg-progress` utility.
+## Variants
 
-## Using `argo-ffmpeg-progress`
+| Image | Shell | Included Packages | Use Case |
+| --- | --- | --- | --- |
+| `ffmpeg` | No (`enableShell = false`) | `ffmpeg-headless` | General-purpose transcoding and media probing |
+| `ffmpeg-argo` | Yes (`bash`, `coreutils`) | `ffmpeg-headless`, `jq`, `argo-ffmpeg-progress` | Cloud-native transcoding pipelines in Argo Workflows |
+
+Both images run as numeric non-root user `65532:65532` and satisfy the Kubernetes `restricted` Pod Security Standard.
+
+## Using `argo-ffmpeg-progress` (`ffmpeg-argo`)
 
 `argo-ffmpeg-progress` consumes `ffmpeg`'s `-progress` stream from `stdin`, calculates the percentage completed based on total duration, and writes `<percent>/100` to a target file for Argo Workflows:
 
@@ -30,7 +39,7 @@ spec:
   - name: transcode-step
     progressFile: "/tmp/argo-progress"
     container:
-      image: ghcr.io/kevinastone/nix-containers/ffmpeg:main
+      image: ghcr.io/kevinastone/nix-containers/ffmpeg-argo:main
       command: [bash, -c]
       args:
         - |

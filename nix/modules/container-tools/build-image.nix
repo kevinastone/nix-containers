@@ -29,11 +29,29 @@
           extraGroupLines = lib.unique (map (u: "${u.name}:x:${toString u.gid}:") users);
         };
 
-      buildLayeredImage =
-        args:
-        let
-          inherit (evalImageConfig { inherit oci args; }) cfg passthroughArgs;
+      envKey = entry: builtins.head (lib.splitString "=" entry);
 
+      dedupEnv =
+        entries:
+        lib.foldr (
+          entry: acc: if builtins.any (x: envKey x == envKey entry) acc then acc else [ entry ] ++ acc
+        ) [ ] entries;
+
+      ociScalarKeys = [
+        "Entrypoint"
+        "Cmd"
+        "User"
+        "WorkingDir"
+        "StopSignal"
+      ];
+
+      mkSingleImage =
+        {
+          cfg,
+          passthroughArgs,
+          variants ? { },
+        }:
+        let
           inherit (cfg)
             package
             name
@@ -137,25 +155,48 @@
 
           mergedContents = lib.unique (baseContents ++ contents);
 
-          userEnv = config.Env or [ ];
-          hasEnvKey = key: builtins.any (lib.hasPrefix "${key}=") userEnv;
+          userEnv = dedupEnv config.Env;
+          hasEnvKey = key: builtins.any (e: envKey e == key) userEnv;
 
           mergedEnv =
             lib.optional (runAsNonRoot && user.home != null && !(hasEnvKey "HOME")) "HOME=${user.home}"
             ++ lib.optional (includeTzdata && !(hasEnvKey "TZDIR")) "TZDIR=${tzdata}/share/zoneinfo"
             ++ userEnv;
 
+          explicitScalars = lib.filterAttrs (k: v: builtins.elem k ociScalarKeys && v != null) config;
+
+          extraOciFields = removeAttrs config (
+            [
+              "_module"
+              "Env"
+              "ExposedPorts"
+              "Volumes"
+              "Labels"
+            ]
+            ++ ociScalarKeys
+          );
+
+          cleanConfig =
+            extraOciFields
+            // explicitScalars
+            // lib.optionalAttrs (config.ExposedPorts != { }) {
+              inherit (config) ExposedPorts;
+            }
+            // lib.optionalAttrs (config.Volumes != { }) {
+              inherit (config) Volumes;
+            };
+
           defaultConfig =
-            lib.optionalAttrs (package != null && !(config ? Entrypoint)) {
+            lib.optionalAttrs (package != null && config.Entrypoint == null) {
               Entrypoint = [ (lib.getExe package) ];
             }
-            // lib.optionalAttrs (runAsNonRoot && !(config ? User)) {
+            // lib.optionalAttrs (runAsNonRoot && config.User == null) {
               User = "${toString user.uid}:${toString user.gid}";
             };
 
           mergedConfig =
             defaultConfig
-            // config
+            // cleanConfig
             // {
               Labels =
                 (oci.mkLabels {
@@ -168,7 +209,7 @@
                     licenses
                     ;
                 })
-                // (config.Labels or { });
+                // config.Labels;
             }
             // lib.optionalAttrs (mergedEnv != [ ]) {
               Env = mergedEnv;
@@ -213,15 +254,20 @@
           testSuite = mkTestSuite (
             testSuiteArgs
             // {
-              extraTests = passthru.tests or { };
+              extraTests = passthru.tests;
             }
           );
+
+          cleanPassthru = removeAttrs passthru [
+            "_module"
+            "tests"
+          ];
         in
         (dockerTools.buildLayeredImage builderArgs).overrideAttrs (old: {
           meta = (old.meta or { }) // oci.mkMeta { inherit package description; } // meta;
           passthru =
             (old.passthru or { })
-            // passthru
+            // cleanPassthru
             // {
               inherit
                 closure
@@ -229,13 +275,32 @@
                 stream
                 streamArchive
                 testSuiteArgs
+                variants
                 ;
+              imageName = name;
+              imageTag = tag;
             }
             // lib.optionalAttrs (package != null) {
               inherit package;
             }
             // testSuite;
         });
+
+      buildLayeredImage =
+        args:
+        let
+          evaluated = evalImageConfig { inherit oci args; };
+          builtVariants = lib.mapAttrs (
+            _: vEval:
+            mkSingleImage {
+              inherit (vEval) cfg passthroughArgs;
+            }
+          ) evaluated.variants;
+        in
+        mkSingleImage {
+          inherit (evaluated) cfg passthroughArgs;
+          variants = builtVariants;
+        };
     in
     {
       containerTools = {

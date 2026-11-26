@@ -10,20 +10,6 @@ commandTests:
     args: ["-version"]
     expectedOutput: ["ffmpeg version"]
 
-  - name: "jq version"
-    command: "jq"
-    args: ["--version"]
-    expectedOutput: ["jq-"]
-
-  - name: "argo-ffmpeg-progress"
-    command: "bash"
-    args:
-      - "-c"
-      - |
-        printf "out_time_us=60000000\n" | argo-ffmpeg-progress 120 /tmp/argo-progress
-        cat /tmp/argo-progress
-    expectedOutput: ["(?m)^50/100$"]
-
 fileExistenceTests:
   - name: "/home/nonroot exists"
     path: "/home/nonroot"

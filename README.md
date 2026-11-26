@@ -44,7 +44,8 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 <!-- BEGIN:CONTAINER_CATALOG -->
 | Container | Image | Platforms | Description |
 | --- | --- | --- | --- |
-| [`ffmpeg`](nix/containers/ffmpeg/README.md) | [`ghcr.io/kevinastone/nix-containers/ffmpeg`](https://ghcr.io/kevinastone/nix-containers/ffmpeg) | `linux/amd64`, `linux/arm64` | Minimal ffmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
+| [`ffmpeg`](nix/containers/ffmpeg/README.md) | [`ghcr.io/kevinastone/nix-containers/ffmpeg`](https://ghcr.io/kevinastone/nix-containers/ffmpeg) | `linux/amd64`, `linux/arm64` | Minimal headless FFmpeg container ([recipe](nix/containers/ffmpeg/default.nix)) |
+| [`ffmpeg-argo`](nix/containers/ffmpeg/README.md) | [`ghcr.io/kevinastone/nix-containers/ffmpeg-argo`](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo) | `linux/amd64`, `linux/arm64` | Minimal FFmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/argo/default.nix)) |
 | [`keycloak`](nix/containers/keycloak/README.md) | [`ghcr.io/kevinastone/nix-containers/keycloak`](https://ghcr.io/kevinastone/nix-containers/keycloak) | `linux/amd64`, `linux/arm64` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
 | [`nut`](nix/containers/nut/README.md) | [`ghcr.io/kevinastone/nix-containers/nut`](https://ghcr.io/kevinastone/nix-containers/nut) | `linux/amd64`, `linux/arm64` | Network UPS Tools ([recipe](nix/containers/nut/default.nix)) |
 | [`opentofu-runner`](nix/containers/opentofu-runner/README.md) | [`ghcr.io/kevinastone/nix-containers/opentofu-runner`](https://ghcr.io/kevinastone/nix-containers/opentofu-runner) | `linux/amd64`, `linux/arm64` | Flux Tofu Controller runner with OpenTofu ([recipe](nix/containers/opentofu-runner/default.nix)) |
@@ -75,7 +76,15 @@ This creates `nix/containers/<name>/` (`default.nix`, `structure-test.yaml`, and
 3. Run `just readme` (if `description` changed), `just fmt`, and `just check`.
 4. Build and smoke-test locally with `just test <name>` (works on both Linux and macOS with a Linux builder + OrbStack/Docker/Podman).
 
-`nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, exposes them as flake packages on their supported platforms, and computes `lib.ci` for GitHub Actions.
+`nix/modules/containers.nix` automatically discovers all subdirectories under `nix/containers/` containing a `default.nix`, expands any configured `variants`, exposes them as flake packages on their supported platforms, and computes `lib.ci` for GitHub Actions.
+
+### Container Variants
+
+Each `<name>` image is kept minimal and general-purpose (`enableShell = false` unless required by the upstream entrypoint, standard upstream `Entrypoint`, no workflow-specific scripts). When a distinct runtime role or package flavor is needed, define `variants.<variant>` on `containerTools.buildLayeredImage` inside `nix/containers/<name>/default.nix`:
+
+- Published as a separate image repository (`ghcr.io/kevinastone/nix-containers/<name>-<variant>`) with standard SemVer tags so Renovate and Flux `ImagePolicy` work without tag-suffix regexes.
+- Scalar options (`package`, `description`, `enableShell`, `user`, `config.Entrypoint`, `config.Cmd`, etc.) inherit from the base image and can be overridden directly.
+- Additive options (`contents`, `structureTest`, `dirs`, `extraUsers`, `extraTags`, `extraCommands`, `fakeRootCommands`, `config.Env`, `config.ExposedPorts`, `config.Volumes`, `config.Labels`) merge automatically with the base image.
 
 ---
 

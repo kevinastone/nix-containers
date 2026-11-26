@@ -43,25 +43,18 @@
         file = ./test-restricted.nu;
       };
 
+      normalizeConfigs = configs: if configs == null then [ ] else map toString (lib.toList configs);
+
+      configFlags = lib.concatMap (c: [
+        "--add-flags"
+        c
+      ]);
+
       structureTest =
-        config:
-        wrapFlags "structure-test" structureTestBase [
-          "--add-flags"
-          "--config"
-          "--add-flags"
-          "${config}"
-        ];
+        configs: wrapFlags "structure-test" structureTestBase (configFlags (normalizeConfigs configs));
 
       restrictedTest =
-        config:
-        wrapFlags "restricted-test" restrictedTestBase (
-          lib.optionals (config != null) [
-            "--add-flags"
-            "--config"
-            "--add-flags"
-            "${config}"
-          ]
-        );
+        configs: wrapFlags "restricted-test" restrictedTestBase (configFlags (normalizeConfigs configs));
 
       builtinOrder = [
         "oci"
@@ -73,18 +66,20 @@
         {
           name,
           runAsNonRoot ? true,
-          structureTestConfig ? null,
+          structureTestConfig ? [ ],
           extraTests ? { },
         }:
         let
+          normalizedConfigs = normalizeConfigs structureTestConfig;
+
           defaultTests = {
             oci = ociTest;
           }
-          // lib.optionalAttrs (structureTestConfig != null) {
-            structure = structureTest structureTestConfig;
+          // lib.optionalAttrs (normalizedConfigs != [ ]) {
+            structure = structureTest normalizedConfigs;
           }
           // lib.optionalAttrs runAsNonRoot {
-            restricted = restrictedTest structureTestConfig;
+            restricted = restrictedTest normalizedConfigs;
           };
 
           tests = lib.filterAttrs (_: v: v != null) (defaultTests // extraTests);

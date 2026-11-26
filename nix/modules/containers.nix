@@ -33,7 +33,7 @@ let
         ++ lib.optional (major != "0") major
       );
 
-  containerNames = builtins.attrNames (
+  containerDirs = builtins.attrNames (
     lib.filterAttrs (
       name: type: type == "directory" && builtins.pathExists (containersDir + "/${name}/default.nix")
     ) (builtins.readDir containersDir)
@@ -64,8 +64,13 @@ let
     ) ciRunners
   );
 
-  containerArches =
-    name: builtins.filter (a: (config.flake.packages.${a.system} or { }) ? ${name}) ciArches;
+  systemContainers = system: config.flake.legacyPackages.${system}.containers or { };
+
+  containerNames = lib.sort builtins.lessThan (
+    lib.unique (lib.concatMap (a: builtins.attrNames (systemContainers a.system)) ciArches)
+  );
+
+  containerArches = name: builtins.filter (a: (systemContainers a.system) ? ${name}) ciArches;
 
   activeContainers = builtins.filter (c: containerArches c != [ ]) containerNames;
 
@@ -74,13 +79,31 @@ let
     let
       arches = containerArches container;
       firstSystem = (builtins.head arches).system;
-      drv = config.flake.packages.${firstSystem}.${container};
+      drv = (systemContainers firstSystem).${container};
+      inherit (drv) sourceDir variantKey;
+      variantRel =
+        if variantKey != null && builtins.pathExists (containersDir + "/${sourceDir}/${variantKey}") then
+          "${sourceDir}/${variantKey}"
+        else
+          null;
+      recipePath =
+        if variantRel != null && builtins.pathExists (containersDir + "/${variantRel}/default.nix") then
+          "nix/containers/${variantRel}/default.nix"
+        else
+          "nix/containers/${sourceDir}/default.nix";
+      docPath =
+        if variantRel != null && builtins.pathExists (containersDir + "/${variantRel}/README.md") then
+          "nix/containers/${variantRel}/README.md"
+        else if builtins.pathExists (containersDir + "/${sourceDir}/README.md") then
+          "nix/containers/${sourceDir}/README.md"
+        else
+          recipePath;
     in
     {
       name = container;
+      inherit docPath recipePath sourceDir;
       description = drv.meta.description or "";
       platforms = map (a: a.platform) arches;
-      hasReadme = builtins.pathExists (containersDir + "/${container}/README.md");
     }
   ) activeContainers;
 in
@@ -95,7 +118,7 @@ in
           let
             arches = containerArches container;
             firstSystem = (builtins.head arches).system;
-            drv = config.flake.packages.${firstSystem}.${container};
+            drv = (systemContainers firstSystem).${container};
             pkg = drv.package or null;
             mkSpec = name: p: {
               inherit name;
@@ -113,7 +136,7 @@ in
       let
         arches = containerArches container;
         firstSystem = (builtins.head arches).system;
-        drv = config.flake.packages.${firstSystem}.${container};
+        drv = (systemContainers firstSystem).${container};
         extraTags = drv.extraTags or [ ];
       in
       {
@@ -124,7 +147,7 @@ in
         drvs = builtins.listToAttrs (
           map (a: {
             name = a.arch;
-            value = builtins.unsafeDiscardStringContext config.flake.packages.${a.system}.${container}.drvPath;
+            value = builtins.unsafeDiscardStringContext (systemContainers a.system).${container}.drvPath;
           }) arches
         );
       }
@@ -142,9 +165,53 @@ in
       inherit (pkgs.stdenv.hostPlatform) isLinux;
       linuxSystem = "${pkgs.stdenv.hostPlatform.parsed.cpu.name}-linux";
 
-      containers = lib.genAttrs containerNames (
-        name: pkgs.callPackage (containersDir + "/${name}") { inherit containerTools; }
-      );
+      withOrigin =
+        {
+          sourceDir,
+          variantKey ? null,
+        }:
+        drv:
+        drv.overrideAttrs (old: {
+          passthru = (old.passthru or { }) // {
+            inherit sourceDir variantKey;
+          };
+        });
+
+      expandedEntries = lib.concatMap (
+        dir:
+        let
+          baseDrv = pkgs.callPackage (containersDir + "/${dir}") { inherit containerTools; };
+          baseName = baseDrv.imageName;
+          variantEntries = lib.mapAttrsToList (variantKey: vDrv: {
+            name = vDrv.imageName;
+            value = withOrigin {
+              sourceDir = dir;
+              inherit variantKey;
+            } vDrv;
+          }) (baseDrv.variants or { });
+        in
+        assert lib.assertMsg (baseName == dir)
+          "containers.nix: base image name '${baseName}' in nix/containers/${dir}/default.nix must match directory '${dir}'";
+        [
+          {
+            name = baseName;
+            value = withOrigin { sourceDir = dir; } baseDrv;
+          }
+        ]
+        ++ variantEntries
+      ) containerDirs;
+
+      entryNames = map (e: e.name) expandedEntries;
+
+      allContainers =
+        assert lib.assertMsg (
+          builtins.length entryNames == builtins.length (lib.unique entryNames)
+        ) "containers.nix: duplicate container/variant names detected across nix/containers/*";
+        builtins.listToAttrs expandedEntries;
+
+      availableContainers = lib.filterAttrs (
+        _: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv
+      ) allContainers;
 
       updatePackages = lib.foldl' (
         acc: drv:
@@ -155,17 +222,17 @@ in
           };
         in
         acc // primary // (drv.updatePackages or { })
-      ) { } (builtins.attrValues containers);
+      ) { } (builtins.attrValues allContainers);
     in
     {
-      packages = lib.optionalAttrs isLinux (
-        lib.filterAttrs (_: drv: lib.meta.availableOn pkgs.stdenv.hostPlatform drv) containers
-      );
+      packages = lib.optionalAttrs isLinux availableContainers;
 
       legacyPackages = {
+        containers = lib.optionalAttrs isLinux availableContainers;
+
         containerTests =
           if isLinux then
-            lib.mapAttrs (_: drv: drv.test) containers
+            lib.mapAttrs (_: drv: drv.test) availableContainers
           else
             lib.listToAttrs (
               map (
@@ -173,11 +240,8 @@ in
                 let
                   arches = containerArches name;
                   targetSystem =
-                    if (config.flake.packages.${linuxSystem} or { }) ? ${name} then
-                      linuxSystem
-                    else
-                      (builtins.head arches).system;
-                  drv = config.flake.packages.${targetSystem}.${name};
+                    if (systemContainers linuxSystem) ? ${name} then linuxSystem else (builtins.head arches).system;
+                  drv = (systemContainers targetSystem).${name};
                 in
                 {
                   inherit name;

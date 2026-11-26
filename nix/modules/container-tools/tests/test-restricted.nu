@@ -2,7 +2,7 @@
 def main [
     runtime: string # Container runtime (docker or podman)
     image: string # Loaded image reference
-    --config: path # Optional container-structure-test YAML whose commandTests are run restricted
+    ...configs: path # Optional container-structure-test YAML(s) whose commandTests are run restricted
 ] {
     let user = (
         ^$runtime inspect $image
@@ -24,11 +24,15 @@ def main [
     }
     print $"Verified numeric non-root UID ($uid) \(User='($user)'\) on ($image)"
 
-    if $config == null {
+    if ($configs | is-empty) {
         return
     }
 
-    let tests = open ($config | path expand) | get -o commandTests | default []
+    let tests = (
+        $configs
+        | each {|c| open ($c | path expand) | get -o commandTests | default [] }
+        | flatten
+    )
     for test in $tests {
         if (($test | get -o setup | default []) | is-not-empty) {
             print $"Skipping restricted run for '($test.name)' \(uses setup commands\)"

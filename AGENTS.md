@@ -65,13 +65,13 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `container-tools/`:
     - `default.nix`: `flake-parts` module exposing `containerTools` via `perSystem` `_module.args`.
     - `oci.nix`: Pure OCI label and platform metadata helpers (`packageLicense`, `mkLabels`, `mkMeta`).
-    - `options.nix`: Typed `lib.evalModules` / `mkOption` schema for `buildLayeredImage` (`user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, etc.).
-    - `build-image.nix`: Wraps `pkgs.dockerTools.buildLayeredImage` with declarative users/dirs, default contents/shell, and test suite wiring.
+    - `options.nix`: Typed `lib.evalModules` / `mkOption` schema for `buildLayeredImage` (`user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `variants`, etc.).
+    - `build-image.nix`: Wraps `pkgs.dockerTools.buildLayeredImage` with declarative users/dirs, default contents/shell, variant builds, and test suite wiring.
     - `tests/`:
       - `default.nix`: Test suite wiring (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).
       - `run-tests.nu`: Nushell test runner (`passthru.test`) that loads the OCI archive once, executes every test in `passthru.tests` against `<runtime> <image>`, and removes the image on exit.
       - `test-oci.nu` / `test-structure.nu` / `test-restricted.nu`: Single-purpose tests for OCI labels, `container-structure-test` suites, and Kubernetes `restricted` Pod Security Standard enforcement.
-  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, filters by `meta.platforms`, exposes host-native `legacyPackages.containerTests`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
+  - `containers.nix`: `flake-parts` module that auto-discovers `nix/containers/*/default.nix`, expands `variants`, filters by `meta.platforms`, exposes host-native `legacyPackages.containerTests`, and computes `flake.lib.containers`, `flake.lib.catalog`, and `flake.lib.ci`.
   - `devshell.nix`: `flake-parts` module configuring `devShells.default`.
   - `nushell.nix`: `flake-parts` module exposing `writeNuApplication` via `perSystem` `_module.args`.
   - `scripts/`:
@@ -88,9 +88,9 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
   - `treefmt.nix`: `flake-parts` module configuring `treefmt-nix` (`just`, `keep-sorted`, `nixfmt`, `statix`, `deadnix`, `nufmt`, `action-validator`, `ghalint`, `zizmor`, `yamlfmt`, `shfmt`, `shellcheck`, `typos`).
 - `nix/containers/`:
   - `ffmpeg/`:
-    - `default.nix`: OCI image derivation for `ffmpeg`.
-    - `argo-ffmpeg-progress.sh`: Progress tracker script packaged into the `ffmpeg` container.
-    - `structure-test.yaml`: Declarative `container-structure-test` suite run against the built `ffmpeg` image.
+    - `default.nix`: OCI image derivation for minimal `ffmpeg` (`variants.argo = callPackage ./argo { }`).
+    - `structure-test.yaml`: Base `container-structure-test` suite.
+    - `argo/`: Self-contained `ffmpeg-argo` variant (`default.nix`, `argo-ffmpeg-progress.sh`, `structure-test.yaml`).
 - `.github/`:
   - `renovate.jsonc`: Mend Renovate configuration managing weekly `flake.lock` updates and SHA-pinned GitHub Actions updates.
   - `workflows/`:
@@ -109,4 +109,5 @@ To add a new container (for example, `keycloak`):
 1. Run `just new <name>` (or `nix run .#new-container -- <name>`) inside the devShell to scaffold `nix/containers/<name>/{default.nix,structure-test.yaml,README.md}`, track the files with `jj`, sync the `README.md` catalog, and format.
    - `containerTools.buildLayeredImage` accepts `package` to automatically derive `name`, `tag`, `description`, `config.Entrypoint`, and package inclusion (or pass/override any of those explicitly). Non-root user (`65532:65532` with `/home/nonroot` and `HOME=/home/nonroot`, customizable via `user = { uid = 1000; gid = 1000; name = "app"; }`), `caCertificates`, `tzdata`, writable `/tmp`, declarative `dirs` (`{ "/var/lib/app" = { mode = "0755"; uid = 65532; gid = 65532; }; }`), and standard OCI labels including `org.opencontainers.image.source` are supported out of the box (`runAsNonRoot`, `includeCaCerts`, `includeTzdata`, and `enableShell` can all be toggled).
 2. Customize `default.nix`, `structure-test.yaml`, and `README.md` (plus any container-specific scripts or assets alongside them in `nix/containers/<name>/`).
+   - Keep `<name>` minimal and general-purpose (`enableShell = false` unless required by the upstream entrypoint). For workflow/role integrations or alternate package flavors, define `variants.<variant> = { ... };` on `buildLayeredImage` to publish `<name>-<variant>` while inheriting scalar options and merging `contents`, `structureTest`, `dirs`, and `config` fields.
 3. Ensure any additional files are tracked by running `jj status`, sync the catalog if descriptions changed (`just readme`), and verify with `just fmt` and `just check` (plus `just test <name>` to build and test the image).

@@ -1,11 +1,7 @@
 def render-row [c: record]: nothing -> string {
-    let link = if $c.hasReadme {
-        $"nix/containers/($c.name)/README.md"
-    } else {
-        $"nix/containers/($c.name)/default.nix"
-    }
+    let link = $c.docPath
     let platforms = $c.platforms | each { $"`($in)`" } | str join ", "
-    let recipe = $"[recipe]\(nix/containers/($c.name)/default.nix\)"
+    let recipe = $"[recipe]\(($c.recipePath)\)"
     let desc = if ($c.description | is-not-empty) {
         $"($c.description) \(($recipe)\)"
     } else {

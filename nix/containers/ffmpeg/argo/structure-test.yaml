@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "jq version"
+    command: "jq"
+    args: ["--version"]
+    expectedOutput: ["jq-"]
+
+  - name: "argo-ffmpeg-progress"
+    command: "bash"
+    args:
+      - "-c"
+      - |
+        printf "out_time_us=60000000\n" | argo-ffmpeg-progress 120 /tmp/argo-progress
+        cat /tmp/argo-progress
+    expectedOutput: ["(?m)^50/100$"]
