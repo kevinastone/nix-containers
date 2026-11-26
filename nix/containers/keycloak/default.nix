@@ -7,6 +7,7 @@
   writeText,
 }:
 let
+  keycloakRoot = "/opt/keycloak";
   keycloakWithMetrics = keycloak.override {
     confFile = writeText "keycloak.conf" ''
       db=postgres
@@ -26,26 +27,26 @@ containerTools.buildLayeredImage {
     findutils
   ];
   dirs = {
-    "/opt/keycloak/conf" = { };
-    "/opt/keycloak/data" = { };
-    "/opt/keycloak/providers" = { };
-    "/opt/keycloak/themes" = { };
+    "${keycloakRoot}/conf" = { };
+    "${keycloakRoot}/data" = { };
+    "${keycloakRoot}/providers" = { };
+    "${keycloakRoot}/themes" = { };
   };
   extraCommands = ''
-    ln -s ${keycloakWithMetrics}/bin ./opt/keycloak/bin
-    ln -s ${keycloakWithMetrics}/lib ./opt/keycloak/lib
+    ln -s ${keycloakWithMetrics}/bin .${keycloakRoot}/bin
+    ln -s ${keycloakWithMetrics}/lib .${keycloakRoot}/lib
   '';
   config = {
-    Entrypoint = [ "/opt/keycloak/bin/kc.sh" ];
+    Entrypoint = [ "${keycloakRoot}/bin/kc.sh" ];
     Cmd = [
       "start"
       "--optimized"
     ];
-    WorkingDir = "/opt/keycloak";
+    WorkingDir = keycloakRoot;
     Env = [
-      "HOME=/opt/keycloak"
-      "KC_HOME_DIR=/opt/keycloak"
-      "KC_CONF_DIR=/opt/keycloak/conf"
+      "HOME=${keycloakRoot}"
+      "KC_HOME_DIR=${keycloakRoot}"
+      "KC_CONF_DIR=${keycloakRoot}/conf"
     ];
     ExposedPorts = {
       "8080/tcp" = { };
