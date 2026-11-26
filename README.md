@@ -50,7 +50,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise.
 | Container | Version | Description |
 | :--- | :--- | :--- |
 | `ffmpeg` ([readme](nix/containers/ffmpeg/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg), [recipe](nix/containers/ffmpeg/default.nix)) | `9.0.2` | Minimal headless FFmpeg container |
-| ↳ `ffmpeg-argo` ([readme](nix/containers/ffmpeg/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo), [recipe](nix/containers/ffmpeg/argo/default.nix)) | `9.0.2` | Minimal FFmpeg container with Argo Workflows progress reporting |
+| ↳ `ffmpeg-argo` ([readme](nix/containers/ffmpeg/argo/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo), [recipe](nix/containers/ffmpeg/argo/default.nix)) | `9.0.2` | Minimal FFmpeg container with Argo Workflows progress reporting |
 | `prowlarr` ([readme](nix/containers/prowlarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/prowlarr), [recipe](nix/containers/prowlarr/default.nix)) | `3.0.2.5780` | Indexer manager/proxy built on the popular arr .net/reactjs base stack |
 | `qbittorrent` ([readme](nix/containers/qbittorrent/README.md), [image](https://ghcr.io/kevinastone/nix-containers/qbittorrent), [recipe](nix/containers/qbittorrent/default.nix)) | `5.3.0` | Featureful free software BitTorrent client |
 | `radarr` ([readme](nix/containers/radarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/radarr), [recipe](nix/containers/radarr/default.nix)) | `7.0.3.10918` | Usenet/BitTorrent movie downloader |
