@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 name: Open Update PR
-description: Run flake checks, generate an nvd changelog report, and open or update a PR
+description: Validate changes, render an nvd changelog, and open or update a pull request
 
 inputs:
   branch:
@@ -16,43 +16,69 @@ inputs:
     description: Header line for flake-update-report
     required: true
   token:
-    description: GitHub token for creating or updating the PR
+    description: GitHub token (or minted GitHub App token) for pushing and opening the PR
     required: false
     default: ${{ github.token }}
+  git-user-name:
+    description: Git author/committer name for the automated commit
+    required: false
+    default: "github-actions[bot]"
+  git-user-email:
+    description: Git author/committer email for the automated commit
+    required: false
+    default: "41898282+github-actions[bot]@users.noreply.github.com"
 
 runs:
   using: composite
   steps:
+    - name: Check for modified paths
+      id: changes
+      shell: bash
+      env:
+        PATHS: ${{ inputs.paths }}
+      run: |
+        read -ra paths <<< "$PATHS"
+        if [ -z "$(git status --porcelain -- "${paths[@]}")" ]; then
+          echo "No updates available in: ${PATHS}"
+          echo "updated=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "updated=true" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Run Nix checks
+      if: steps.changes.outputs.updated == 'true'
       shell: bash
       run: nix flake check -L
 
     - name: Generate changelog report
+      if: steps.changes.outputs.updated == 'true'
       shell: bash
       env:
         REPORT_TITLE: ${{ inputs.report-title }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       run: |
-        git worktree add --detach /tmp/before HEAD
         nix run .#flake-update-report -- \
-          /tmp/before . \
+          --base-ref HEAD \
           --title "$REPORT_TITLE" \
           --body-file /tmp/pr-body.md \
           --run-url "$RUN_URL"
 
     - name: Open or update Pull Request
+      if: steps.changes.outputs.updated == 'true'
       shell: bash
       env:
         BRANCH: ${{ inputs.branch }}
         GH_TOKEN: ${{ inputs.token }}
+        GIT_AUTHOR_NAME: ${{ inputs.git-user-name }}
+        GIT_AUTHOR_EMAIL: ${{ inputs.git-user-email }}
         PATHS: ${{ inputs.paths }}
         TITLE: ${{ inputs.title }}
       run: |
         read -ra paths <<< "$PATHS"
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git config user.name "$GIT_AUTHOR_NAME"
+        git config user.email "$GIT_AUTHOR_EMAIL"
         git checkout -B "$BRANCH"
-        git add -- "${paths[@]}"
+        git add -- "${paths[@]}" README.md
         git commit -m "$TITLE"
         git push --force origin "$BRANCH"
 

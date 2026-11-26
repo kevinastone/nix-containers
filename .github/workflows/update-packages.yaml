@@ -4,7 +4,7 @@ name: Update Custom Packages
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 1" # Weekly on Monday at 00:00 UTC
+    - cron: "23 5 * * 1" # Weekly on Monday at 05:23 UTC (after Renovate flake.lock window)
 
 permissions:
   contents: read
@@ -17,6 +17,7 @@ jobs:
   update-packages:
     name: Update Custom Packages
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     permissions:
       contents: write
       pull-requests: write
@@ -30,20 +31,11 @@ jobs:
         uses: ./.github/actions/setup-nix
 
       - name: Update custom packages
-        id: update
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          nix run .#update-packages
-          if git diff --quiet nix/; then
-            echo "No custom package updates available."
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-          fi
+        run: nix run .#update-packages
 
       - name: Open or update Pull Request
-        if: steps.update.outputs.updated == 'true'
         uses: ./.github/actions/open-update-pr
         with:
           branch: chore/update-packages
