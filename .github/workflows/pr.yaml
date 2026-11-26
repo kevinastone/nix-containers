@@ -15,9 +15,11 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-24.04
+    timeout-minutes: 25
     permissions:
       contents: read
       packages: read
+      pull-requests: write
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
       has_changes: ${{ steps.discover.outputs.has_changes }}
@@ -30,6 +32,14 @@ jobs:
       - name: Test and discover changed containers
         id: discover
         uses: ./.github/actions/test-and-discover
+
+      - name: Report container closure changelog
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: nix run .#flake-update-report -- --base-ref "origin/${BASE_REF}" --pr-number "$PR_NUMBER" --run-url "$RUN_URL"
 
   build:
     name: ${{ matrix.container }}

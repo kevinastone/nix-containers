@@ -42,7 +42,6 @@
               }}"
             ];
             includes = [
-              ".github/dependabot.yml"
               ".github/workflows/*.yml"
               ".github/workflows/*.yaml"
               ".github/actions/**/*.yml"

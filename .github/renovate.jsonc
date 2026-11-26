@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":disableRateLimiting",
+    ":rebaseStalePrs",
+    ":semanticCommits",
+    ":automergeMinor",
+    ":automergeDigest",
+    "helpers:pinGitHubActionDigestsToSemver",
+    ":configMigration",
+    ":maintainLockFilesWeekly",
+    "group:allNonMajor"
+  ],
+  // Guard against newly published upstream supply-chain compromises.
+  "minimumReleaseAge": "3 days",
+  // Enable Renovate's Nix flake manager (opt-in) alongside weekly flake.lock maintenance.
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      // Use chore(ci): for GitHub Actions workflow dependency updates.
+      "matchManagers": [
+        "github-actions"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "ci"
+    },
+    {
+      // Use chore(deps): for Nix flake input updates.
+      "matchManagers": [
+        "nix"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    }
+  ]
+}
