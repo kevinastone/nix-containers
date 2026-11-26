@@ -4,6 +4,28 @@ Recommendations for hardening `.github/` workflows and `nix/modules/scripts/` as
 
 ---
 
+## Pre-Existing Tools & Ecosystem Evaluation
+
+Before building more custom workflow glue, several mature off-the-shelf tools can delete existing YAML/script boilerplate outright:
+
+| Area | Current Approach | Pre-Existing Alternative | Verdict & Tradeoffs |
+| --- | --- | --- | --- |
+| **`flake.lock` + Action Updates** | [dependabot.yml](dependabot.yml) + [workflows/update-flake.yaml](workflows/update-flake.yaml) + [actions/open-update-pr](actions/open-update-pr/action.yml) | **Mend Renovate (Hosted GitHub App)** (`nix` + `github-actions` managers) | **Strongly recommended.** Replaces `dependabot.yml` *and* `update-flake.yaml`. Runs as a real GitHub App (solving `GITHUB_TOKEN` PR creation, `synchronize` suppression, and `automerge` with zero token management), pins Action SHAs (`helpers:pinGitHubActionDigestsToSemver`), and provides a Dependency Dashboard issue. *Caveat:* Hosted Renovate disables `postUpgradeTasks`, so it cannot run `nix-update` (FOD hash recalculation) or `flake-update-report` inline — solve the latter by posting `flake-update-report` as a PR comment from `pr.yaml` (which benefits human PRs too). |
+| **Custom Nix Package Updates** | [workflows/update-packages.yaml](workflows/update-packages.yaml) + [../nix/modules/scripts/update-packages.nu](../nix/modules/scripts/update-packages.nu) | **`renovatebot/github-action`** (self-hosted Renovate with `postUpgradeTasks`) *or* **`Mic92/nix-update`** + **`peter-evans/create-pull-request`** | Keep `Mic92/nix-update` (nothing else recomputes Nix `hash` / `cargoHash` / `vendorHash` reliably), wrap PR creation with **`peter-evans/create-pull-request`** to delete custom git/branch/`gh pr` shell glue, or run self-hosted `renovatebot/github-action` if unified Dependency Dashboard tracking for custom packages is desired. |
+| **PR Creation Boilerplate** | Custom `git checkout -B` / `git push --force` / `gh pr view` / `gh pr create` in [actions/open-update-pr](actions/open-update-pr/action.yml) | **`peter-evans/create-pull-request`** | Battle-tested action that handles no-op diff detection, branch creation/reset, commit signoff, labels, assignees, and automatic branch deletion on merge/close out of the box. |
+| **OCI Image Builder & Layering** | `pkgs.dockerTools.buildLayeredImage` `.tar.gz` + GitHub Actions `upload-artifact` / `download-artifact` + `regctl image import` | **`nlewo/nix2container`** + `skopeo` | Worth evaluating as the catalog grows: streams Nix store layers directly to registries/daemons **without materializing `.tar.gz` tarballs on disk** or uploading/downloading multi-hundred-MB Actions artifacts between `build` and `push`, and enables fine-grained cross-container layer sharing (`glibc`, `openssl`, `ca-certificates`) on GHCR. |
+| **Nix Installer & Binary Cache** | `cachix/install-nix-action` + `DeterminateSystems/magic-nix-cache-action` | **`DeterminateSystems/nix-installer-action`** + **Cachix / FlakeHub Cache / Attic** | `nix-installer-action` is faster and more resilient in CI. `magic-nix-cache` relies on GitHub Actions Cache (capped at **10 GB/repo**), which will thrash and evict layers once 15–30 multi-arch containers exist; plan to graduate to Cachix, FlakeHub Cache, or self-hosted Attic/Harmonia. |
+| **Parallel Nix Evaluation & Builds** | Per-container × per-arch GitHub VM matrix (`nix eval` + `nix build` repeated in every job) | **`Mic92/nix-fast-build`** (or **Garnix** / **buildbot-nix**) | Evaluates the flake once and builds derivations in parallel with streaming cache uploads; particularly impactful if consolidating builds onto larger or self-hosted ARM/x64 runners. |
+| **Action SHA Pinning Locally** | Manual SHA + `# vX.Y.Z` comments | **`suzuki-shunsuke/pinact`** (`pkgs.pinact` in `treefmt` / `devShell`) | Automatically resolves and pins `uses: owner/repo@vX` tags to immutable commit SHAs with version comments via `pinact run`, complementing `zizmor` and Renovate. |
+| **Concurrent Update Merges** | Direct branch merges into `main` | **GitHub Merge Queue** (Repository Rulesets) | Prevents rebase churn and broken-`main` races when multiple automated container/action PRs are ready to merge simultaneously. |
+
+### Recommended Target Architecture (Minimal Custom Code)
+1. **Adopt Hosted Renovate** to delete [dependabot.yml](dependabot.yml) and [workflows/update-flake.yaml](workflows/update-flake.yaml) (enable `lockFileMaintenance`, `pinDigests`, and `automerge` for non-breaking updates).
+2. **Move `flake-update-report` (`nvd` changelog) into [workflows/pr.yaml](workflows/pr.yaml)** as an idempotent sticky PR comment (`marocchino/sticky-pull-request-comment`) so *every* PR — Renovate, `update-packages`, or human — automatically gets runtime closure diffs without coupling PR creation to Nix evaluation.
+3. **Keep only `update-packages`** for `nix-update` FOD hash updates, delegating git/PR lifecycle to `peter-evans/create-pull-request` authenticated via `actions/create-github-app-token`.
+
+---
+
 ## P1: Resilience & State Integrity
 
 ### 1. Make OCI publishing atomic (`push digest` → `sign & attest` → `promote :main`)
