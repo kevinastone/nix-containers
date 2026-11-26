@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: Open Update PR
+description: Run flake checks, generate an nvd changelog report, and open or update a PR
+
+inputs:
+  branch:
+    description: Branch name for the update PR
+    required: true
+  paths:
+    description: Space-separated file or directory paths to stage
+    required: true
+  title:
+    description: Commit message and pull request title
+    required: true
+  report-title:
+    description: Header line for flake-update-report
+    required: true
+  token:
+    description: GitHub token for creating or updating the PR
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  has_changes:
+    description: Whether any container derivations changed
+    value: ${{ steps.report.outputs.has_changes }}
+  matrix:
+    description: JSON build matrix of changed containers
+    value: ${{ steps.report.outputs.matrix }}
+  sha:
+    description: Commit SHA pushed to the update PR branch
+    value: ${{ steps.pr.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+    - name: Run Nix checks
+      shell: bash
+      run: nix flake check -L
+
+    - name: Generate changelog report
+      id: report
+      shell: bash
+      env:
+        REPORT_TITLE: ${{ inputs.report-title }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        git worktree add --detach /tmp/before HEAD
+        nix run .#flake-update-report -- \
+          /tmp/before . \
+          --title "$REPORT_TITLE" \
+          --body-file /tmp/pr-body.md \
+          --run-url "$RUN_URL" \
+          --github-output "$GITHUB_OUTPUT"
+
+    - name: Open or update Pull Request
+      id: pr
+      shell: bash
+      env:
+        BRANCH: ${{ inputs.branch }}
+        GH_TOKEN: ${{ inputs.token }}
+        PATHS: ${{ inputs.paths }}
+        TITLE: ${{ inputs.title }}
+      run: |
+        read -ra paths <<< "$PATHS"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git checkout -B "$BRANCH"
+        git add -- "${paths[@]}"
+        git commit -m "$TITLE"
+        git push --force origin "$BRANCH"
+        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+        if gh pr view "$BRANCH" >/dev/null 2>&1; then
+          gh pr edit "$BRANCH" --title "$TITLE" --body-file /tmp/pr-body.md
+        else
+          gh pr create --base main --head "$BRANCH" --title "$TITLE" --body-file /tmp/pr-body.md
+        fi

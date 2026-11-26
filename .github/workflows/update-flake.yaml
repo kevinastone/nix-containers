@@ -21,8 +21,8 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      has_changes: ${{ steps.report.outputs.has_changes }}
-      matrix: ${{ steps.report.outputs.matrix }}
+      has_changes: ${{ steps.pr.outputs.has_changes }}
+      matrix: ${{ steps.pr.outputs.matrix }}
       sha: ${{ steps.pr.outputs.sha }}
     steps:
       - name: Checkout # zizmor: ignore[artipacked] -- git push to PR branch requires persisted credentials
@@ -44,41 +44,15 @@ jobs:
             echo "updated=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Run Nix checks
-        if: steps.update.outputs.updated == 'true'
-        run: nix flake check -L
-
-      - name: Generate changelog report
-        id: report
-        if: steps.update.outputs.updated == 'true'
-        run: |
-          git worktree add --detach /tmp/before HEAD
-          nix run .#flake-update-report -- \
-            /tmp/before . \
-            --body-file /tmp/pr-body.md \
-            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
-            --github-output "$GITHUB_OUTPUT"
-
       - name: Open or update Pull Request
         id: pr
         if: steps.update.outputs.updated == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          branch="chore/update-flake-lock"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B "$branch"
-          git add flake.lock
-          git commit -m "chore(deps): update flake.lock"
-          git push --force origin "$branch"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-          if gh pr view "$branch" >/dev/null 2>&1; then
-            gh pr edit "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
-          else
-            gh pr create --base main --head "$branch" --title "chore(deps): update flake.lock" --body-file /tmp/pr-body.md
-          fi
+        uses: ./.github/actions/open-update-pr
+        with:
+          branch: chore/update-flake-lock
+          paths: flake.lock
+          title: "chore(deps): update flake.lock"
+          report-title: "Automated `flake.lock` update."
 
   build:
     name: ${{ matrix.container }}
