@@ -1,14 +1,12 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-action.json
 name: Setup Nix
-description: Install Nix and configure Magic Nix Cache
+description: Install Determinate Nix and configure Magic Nix Cache
 
 runs:
   using: composite
   steps:
     - name: Install Nix
-      uses: cachix/install-nix-action@382a9ed9481c7c1f94f68b72ef105b3417c73877 # v32.1.0
-      with:
-        github_access_token: ${{ github.token }}
+      uses: DeterminateSystems/determinate-nix-action@4b040423529d49b1a19ba918742e0aa9aa95031a # v3.24.3
 
     - name: Setup Magic Nix Cache
       uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15

@@ -16,14 +16,12 @@ Tracking CI/CD hardening across `.github/` and `nix/modules/scripts/` for **zero
 - [x] **Repo-scoped GitHub App authentication for `update-packages`** ([workflows/update-packages.yaml](workflows/update-packages.yaml), [actions/open-update-pr/action.yml](actions/open-update-pr/action.yml)): Mints short-lived installation tokens via `actions/create-github-app-token` (`vars.APP_ID` / `secrets.APP_PRIVATE_KEY`) only when updates exist, resolves the verified `<app-slug>[bot]` git author identity dynamically, drops job `GITHUB_TOKEN` permissions to `contents: read`, and ensures `pull_request` (`opened` + `synchronize`) workflows trigger reliably.
 - [x] **Shared Nushell CI library & workflow cleanup** ([../nix/modules/scripts/lib.nu](../nix/modules/scripts/lib.nu), [actions/open-update-pr](actions/open-update-pr/action.yml), [workflows/_build.yaml](workflows/_build.yaml)): Extracted shared retry/worktree/GitHub helpers into `lib.nu`, moved worktree lifecycle into `inspect-image` and `flake-update-report`, folded no-op path checks into `open-update-pr`, replaced unmaintained `actionlint` with `action-validator` + `ghalint`, replaced deprecated `actions/attest-build-provenance` with `actions/attest`, upgraded runners to `ubuntu-26.04`, removed dead `inputs.ref` plumbing, staggered schedules off `00:00 UTC`, and added explicit `timeout-minutes` across all jobs.
 
+- [x] **Streamed CI image archives & Determinate Nix installer** ([../nix/modules/container-tools/build-image.nix](../nix/modules/container-tools/build-image.nix), [workflows/_build.yaml](workflows/_build.yaml), [actions/setup-nix/action.yml](actions/setup-nix/action.yml)): Exposed `passthru.stream` (`dockerTools.streamLayeredImage` with `maxLayers = 100` cross-container layer sharing) and `passthru.streamArchive` (`pigz -nT`) so CI streams `${ARCH}.tar.gz` directly without writing multi-hundred-MB `.tar.gz` archives into `/nix/store` or churning the 10 GB `magic-nix-cache`, and migrated `setup-nix` to `DeterminateSystems/determinate-nix-action`.
+
 ---
 
 ## Remaining / Future Enhancements (As Catalog Scales)
 
-### 1. Binary Cache & Layer Streaming at Scale (15–30+ Containers)
-- **Binary cache graduation:** `DeterminateSystems/magic-nix-cache-action` uses GitHub Actions Cache (capped at **10 GB/repo**). If multi-arch closures begin evicting cache entries, graduate to **Cachix**, **FlakeHub Cache**, or self-hosted **Attic**/**Harmonia** (and consider `DeterminateSystems/nix-installer-action` + `Mic92/nix-fast-build`).
-- **Direct layer streaming (`nlewo/nix2container` + `skopeo`):** Eliminates materializing intermediate `.tar.gz` archives and uploading/downloading multi-hundred-MB Actions artifacts between `_build.yaml` and `_publish.yaml`, while enabling fine-grained store-path layer sharing across containers on GHCR.
-
-### 2. Scheduled `:main` Vulnerability Re-Scanning & GHCR Retention
+### 1. Scheduled `:main` Vulnerability Re-Scanning & GHCR Retention
 - **Scheduled CVE scan of published images:** Because `ci-matrix` skips containers whose Nix `drvPath` has not changed, newly disclosed CVEs in published `:main` images only surface when `flake.lock` updates. Add a lightweight scheduled scan (or enable `--fail-on` thresholds once a `.grype.yaml` triage baseline is established).
 - **GHCR untagged manifest retention:** Periodically prune superseded untagged OCI manifests in GHCR while preserving OCI referrers (`.sig` signatures and SLSA/SPDX attestations) attached to active tagged digests.
