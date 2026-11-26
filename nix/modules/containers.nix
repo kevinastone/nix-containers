@@ -8,6 +8,30 @@ let
   repoRoot = toString ../..;
   containersDir = ../containers;
   isLocalPackage = pkg: lib.hasPrefix repoRoot (pkg.meta.position or "");
+  isGitHubPackage =
+    pkg:
+    lib.hasInfix "github.com" (pkg.src.url or (lib.head (pkg.src.urls or [ "" ])))
+    || lib.hasInfix "github.com" (pkg.meta.homepage or "");
+
+  semverTags =
+    version:
+    let
+      m = builtins.match "^v?([0-9]+)\\.([0-9]+)\\.([0-9]+)$" version;
+      major = builtins.elemAt m 0;
+      minor = builtins.elemAt m 1;
+      patch = builtins.elemAt m 2;
+    in
+    if m == null then
+      [ version ]
+    else
+      lib.unique (
+        [
+          version
+          "${major}.${minor}.${patch}"
+          "${major}.${minor}"
+        ]
+        ++ lib.optional (major != "0") major
+      );
 
   containerNames = builtins.attrNames (
     lib.filterAttrs (
@@ -60,19 +84,26 @@ in
 {
   flake.lib = {
     containers = containerNames;
-    updatePackages = lib.unique (
-      lib.concatMap (
-        container:
-        let
-          arches = containerArches container;
-          firstSystem = (builtins.head arches).system;
-          drv = config.flake.packages.${firstSystem}.${container};
-          pkg = drv.package or null;
-          extra = builtins.attrNames (drv.updatePackages or { });
-        in
-        lib.optional (pkg != null && isLocalPackage pkg) pkg.pname ++ extra
-      ) activeContainers
-    );
+    updatePackages = map (s: s.name) config.flake.lib.updatePackageSpecs;
+    updatePackageSpecs =
+      let
+        collectSpecs =
+          container:
+          let
+            arches = containerArches container;
+            firstSystem = (builtins.head arches).system;
+            drv = config.flake.packages.${firstSystem}.${container};
+            pkg = drv.package or null;
+            mkSpec = name: p: {
+              inherit name;
+              args = p.nixUpdateArgs or (lib.optionals (isGitHubPackage p) [ "--use-github-releases" ]);
+            };
+            primary = lib.optional (pkg != null && isLocalPackage pkg) (mkSpec pkg.pname pkg);
+            extra = lib.mapAttrsToList mkSpec (drv.updatePackages or { });
+          in
+          primary ++ extra;
+      in
+      lib.unique (lib.concatMap collectSpecs activeContainers);
     inherit catalog;
     ci = map (
       container:
@@ -80,11 +111,12 @@ in
         arches = containerArches container;
         firstSystem = (builtins.head arches).system;
         drv = config.flake.packages.${firstSystem}.${container};
+        extraTags = drv.extraTags or [ ];
       in
       {
-        inherit container;
+        inherit container extraTags;
         version = drv.imageTag;
-        extraTags = drv.extraTags or [ ];
+        tags = lib.unique (semverTags drv.imageTag ++ extraTags);
         arches = map (a: { inherit (a) arch runs-on; }) arches;
         drvs = builtins.listToAttrs (
           map (a: {

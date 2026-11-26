@@ -23,6 +23,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: read
@@ -57,7 +58,6 @@ jobs:
     uses: ./.github/workflows/_publish.yaml
     with:
       container: ${{ matrix.container }}
-      version: ${{ matrix.version }}
-      extra_tags_json: ${{ toJson(matrix.extraTags) }}
+      tags_json: ${{ toJson(matrix.tags) }}
       arches_json: ${{ toJson(matrix.arches) }}
       drvs_json: ${{ toJson(matrix.drvs) }}

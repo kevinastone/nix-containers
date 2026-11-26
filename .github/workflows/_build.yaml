@@ -4,9 +4,6 @@ name: Build
 on:
   workflow_call:
     inputs:
-      ref:
-        type: string
-        default: ""
       container:
         type: string
         required: true
@@ -24,6 +21,7 @@ jobs:
   build:
     name: ${{ matrix.arch }}
     runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -35,7 +33,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - name: Setup Nix
@@ -48,15 +45,7 @@ jobs:
         run: nix run ".#${CONTAINER}.test" -- result
 
       - name: Inspect ${{ inputs.container }} (${{ matrix.arch }})
-        run: |
-          BASE_ARGS=()
-          if git fetch --no-tags --depth=1 origin main 2>/dev/null; then
-            if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
-              git worktree add --detach /tmp/base FETCH_HEAD
-              BASE_ARGS+=(--base-dir /tmp/base)
-            fi
-          fi
-          nix run .#inspect-image -- result --container "$CONTAINER" --arch "$ARCH" "${BASE_ARGS[@]}"
+        run: nix run .#inspect-image -- result --container "$CONTAINER" --arch "$ARCH" --base-ref origin/main
 
       - name: Generate SBOM and scan ${{ inputs.container }} (${{ matrix.arch }})
         run: nix run .#scan-image -- result --label "${CONTAINER} (${ARCH})" --sbom-output "${ARCH}.spdx.json"

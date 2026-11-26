@@ -4,18 +4,12 @@ name: Publish
 on:
   workflow_call:
     inputs:
-      ref:
-        type: string
-        default: ""
       container:
         type: string
         required: true
-      version:
+      tags_json:
         type: string
         required: true
-      extra_tags_json:
-        type: string
-        default: "[]"
       arches_json:
         type: string
         required: true
@@ -31,7 +25,6 @@ jobs:
     name: Build
     uses: ./.github/workflows/_build.yaml
     with:
-      ref: ${{ inputs.ref }}
       container: ${{ inputs.container }}
       arches_json: ${{ inputs.arches_json }}
       upload_artifacts: true
@@ -40,6 +33,7 @@ jobs:
     name: Push
     needs: [build]
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
@@ -49,7 +43,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - name: Setup Nix
@@ -62,18 +55,6 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/${{ github.repository }}/${{ inputs.container }}
-          tags: |
-            type=raw,value=${{ inputs.version }}
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}},value=${{ inputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
-            type=semver,pattern={{major}},value=${{ inputs.version }},enable=${{ !startsWith(inputs.version, '0.') }}
-
       - name: Login to GHCR
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
@@ -81,43 +62,57 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
 
-      - name: ⬆️ Push Image to GHCR
-        id: push
+      - name: Stage multi-arch OCI index by digest
+        id: stage
         env:
-          IMAGE_REPO: ghcr.io/${{ github.repository }}/${{ inputs.container }}
-          TAGS: ${{ steps.meta.outputs.tags }}
-          EXTRA_TAGS_JSON: ${{ inputs.extra_tags_json }}
-          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
-          REVISION: ${{ github.sha }}
           DRVS_JSON: ${{ inputs.drvs_json }}
-        run: |
-          ARGS=()
-          for tar in artifacts/*.tar.gz; do
-            ARGS+=("linux/$(basename "$tar" .tar.gz)=${tar}")
-          done
-          SBOM_FILES=(artifacts/*.spdx.json)
-          echo "sbom=${SBOM_FILES[0]}" >> "$GITHUB_OUTPUT"
-          nix run .#push-multiarch -- "$IMAGE_REPO" "${ARGS[@]}" --github-output "$GITHUB_OUTPUT"
+          IMAGE_REPO: ghcr.io/${{ github.repository }}/${{ inputs.container }}
+          REVISION: ${{ github.sha }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: nix run .#push-multiarch -- stage "$IMAGE_REPO" --artifacts-dir artifacts --github-output "$GITHUB_OUTPUT"
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@881c63bd87e38389154debd8331404ce7ca8a3ab # v4.1.4
 
       - name: Sign multi-arch OCI index
         env:
-          IMAGE_REF: ${{ steps.push.outputs.repo }}@${{ steps.push.outputs.digest }}
+          IMAGE_REF: ${{ steps.stage.outputs.repo }}@${{ steps.stage.outputs.digest }}
         run: cosign sign --yes "$IMAGE_REF"
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-name: ${{ steps.push.outputs.repo }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-name: ${{ steps.stage.outputs.repo }}
+          subject-digest: ${{ steps.stage.outputs.digest }}
           push-to-registry: true
 
-      - name: Attest SBOM
+      - name: Attest amd64 SBOM
+        if: steps.stage.outputs.amd64_digest != ''
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-name: ${{ steps.push.outputs.repo }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          sbom-path: ${{ steps.push.outputs.sbom }}
+          subject-name: ${{ steps.stage.outputs.repo }}
+          subject-digest: ${{ steps.stage.outputs.amd64_digest }}
+          sbom-path: artifacts/amd64.spdx.json
           push-to-registry: true
+
+      - name: Attest arm64 SBOM
+        if: steps.stage.outputs.arm64_digest != ''
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ steps.stage.outputs.repo }}
+          subject-digest: ${{ steps.stage.outputs.arm64_digest }}
+          sbom-path: artifacts/arm64.spdx.json
+          push-to-registry: true
+
+      - name: Promote mutable tags
+        env:
+          DIGEST: ${{ steps.stage.outputs.digest }}
+          IMAGE_REPO: ${{ steps.stage.outputs.repo }}
+          IS_MAIN: ${{ github.ref == 'refs/heads/main' }}
+          TAGS_JSON: ${{ inputs.tags_json }}
+        run: |
+          EXTRA_ARGS=()
+          if [ "$IS_MAIN" = "true" ]; then
+            EXTRA_ARGS+=(--include-main)
+          fi
+          nix run .#push-multiarch -- promote "$IMAGE_REPO" "$DIGEST" "${EXTRA_ARGS[@]}"

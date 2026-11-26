@@ -131,8 +131,9 @@ The GitHub Actions workflows defined in [.github/workflows/pr.yaml](.github/work
 
 1. **Linting & Change Detection**: Runs `nix flake check`, evaluates `.#lib.ci` (which computes each container's supported architectures and Nix `drvPath`s), and filters out containers whose published `:main` OCI index already matches `dev.nix-containers.drv.<arch>`.
 2. **Independent Per-Container Pipelines**: Spawns an isolated `_build.yaml` check on PRs (read-only, fork-safe) or `_publish.yaml` pipeline on `main` per changed container so fast builds push immediately without waiting on slower containers.
-3. **Upstream Tagging**: Tags each published image with its Nix `.imageTag` (plus semver and `:main`) directly from `.#lib.ci`.
-4. **Multi-Arch Push, Signing & Provenance**: Combines architecture builds into a multi-arch OCI index using `push-multiarch`, publishes to `ghcr.io/<owner>/<repo>/<container>`, signs the index digest keyless with Sigstore `cosign`, and attaches GitHub SLSA build provenance attestations.
+3. **Deterministic Nix Tagging**: Derives semver tags (`<major>.<minor>.<patch>`, `<major>.<minor>`, `<major>`), `extraTags`, and `:main` directly in `.#lib.ci`.
+4. **Atomic Multi-Arch Push, Signing & Provenance**: Stages the multi-arch OCI index by digest via `push-multiarch stage`, signs the index digest keyless with Sigstore `cosign`, attaches GitHub SLSA build provenance and per-architecture SPDX SBOM attestations, and promotes mutable tags only after signing and attestation succeed.
+5. **Automated Dependency Maintenance**: [Renovate](.github/renovate.jsonc) maintains `flake.lock` and SHA-pinned GitHub Actions weekly, [.github/workflows/update-packages.yaml](.github/workflows/update-packages.yaml) updates custom Nix packages via `nix-update`, and [.github/workflows/pr.yaml](.github/workflows/pr.yaml) posts `nvd` runtime closure changelogs on pull requests.
 
 ### Verifying Images
 
@@ -145,12 +146,13 @@ cosign verify \
   --certificate-identity-regexp '^https://github\.com/kevinastone/nix-containers/\.github/workflows/.+@refs/heads/main$' \
   ghcr.io/kevinastone/nix-containers/ffmpeg:main
 
-# Verify GitHub SLSA build provenance attestation
+# Verify GitHub SLSA build provenance attestation (on the multi-arch OCI index)
 gh attestation verify oci://ghcr.io/kevinastone/nix-containers/ffmpeg:main \
   --owner kevinastone
 
-# Verify SPDX SBOM attestation
-gh attestation verify oci://ghcr.io/kevinastone/nix-containers/ffmpeg:main \
+# Verify per-architecture SPDX SBOM attestation
+AMD64_DIGEST=$(regctl image digest --platform linux/amd64 ghcr.io/kevinastone/nix-containers/ffmpeg:main)
+gh attestation verify "oci://ghcr.io/kevinastone/nix-containers/ffmpeg@${AMD64_DIGEST}" \
   --owner kevinastone \
   --predicate-type https://spdx.dev/Document/v2.3
 ```
