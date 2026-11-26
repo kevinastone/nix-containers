@@ -44,15 +44,15 @@ This repository uses Nix Flakes and `dockerTools` to build deterministic, minima
 <!-- BEGIN:CONTAINER_CATALOG -->
 | Container | Image | Platforms | Description |
 | --- | --- | --- | --- |
-| [`ffmpeg`](nix/containers/ffmpeg/README.md) | `ghcr.io/kevinastone/nix-containers/ffmpeg` | `linux/amd64`, `linux/arm64` | Minimal ffmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
-| [`keycloak`](nix/containers/keycloak/README.md) | `ghcr.io/kevinastone/nix-containers/keycloak` | `linux/amd64`, `linux/arm64` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
-| [`nut`](nix/containers/nut/README.md) | `ghcr.io/kevinastone/nix-containers/nut` | `linux/amd64`, `linux/arm64` | Network UPS Tools ([recipe](nix/containers/nut/default.nix)) |
-| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) | `ghcr.io/kevinastone/nix-containers/opentofu-runner` | `linux/amd64`, `linux/arm64` | Flux Tofu Controller runner with OpenTofu ([recipe](nix/containers/opentofu-runner/default.nix)) |
-| [`prowlarr`](nix/containers/prowlarr/README.md) | `ghcr.io/kevinastone/nix-containers/prowlarr` | `linux/amd64`, `linux/arm64` | Indexer manager/proxy built on the popular arr .net/reactjs base stack ([recipe](nix/containers/prowlarr/default.nix)) |
-| [`qbittorrent`](nix/containers/qbittorrent/README.md) | `ghcr.io/kevinastone/nix-containers/qbittorrent` | `linux/amd64`, `linux/arm64` | Featureful free software BitTorrent client ([recipe](nix/containers/qbittorrent/default.nix)) |
-| [`radarr`](nix/containers/radarr/README.md) | `ghcr.io/kevinastone/nix-containers/radarr` | `linux/amd64`, `linux/arm64` | Usenet/BitTorrent movie downloader ([recipe](nix/containers/radarr/default.nix)) |
-| [`sabnzbd`](nix/containers/sabnzbd/README.md) | `ghcr.io/kevinastone/nix-containers/sabnzbd` | `linux/amd64`, `linux/arm64` | Usenet NZB downloader, par2 repairer and auto extracting server ([recipe](nix/containers/sabnzbd/default.nix)) |
-| [`sonarr`](nix/containers/sonarr/README.md) | `ghcr.io/kevinastone/nix-containers/sonarr` | `linux/amd64`, `linux/arm64` | Smart PVR for newsgroup and bittorrent users ([recipe](nix/containers/sonarr/default.nix)) |
+| [`ffmpeg`](nix/containers/ffmpeg/README.md) | [`ghcr.io/kevinastone/nix-containers/ffmpeg`](https://ghcr.io/kevinastone/nix-containers/ffmpeg) | `linux/amd64`, `linux/arm64` | Minimal ffmpeg container with Argo Workflows progress reporting ([recipe](nix/containers/ffmpeg/default.nix)) |
+| [`keycloak`](nix/containers/keycloak/README.md) | [`ghcr.io/kevinastone/nix-containers/keycloak`](https://ghcr.io/kevinastone/nix-containers/keycloak) | `linux/amd64`, `linux/arm64` | Identity and access management for modern applications and services ([recipe](nix/containers/keycloak/default.nix)) |
+| [`nut`](nix/containers/nut/README.md) | [`ghcr.io/kevinastone/nix-containers/nut`](https://ghcr.io/kevinastone/nix-containers/nut) | `linux/amd64`, `linux/arm64` | Network UPS Tools ([recipe](nix/containers/nut/default.nix)) |
+| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) | [`ghcr.io/kevinastone/nix-containers/opentofu-runner`](https://ghcr.io/kevinastone/nix-containers/opentofu-runner) | `linux/amd64`, `linux/arm64` | Flux Tofu Controller runner with OpenTofu ([recipe](nix/containers/opentofu-runner/default.nix)) |
+| [`prowlarr`](nix/containers/prowlarr/README.md) | [`ghcr.io/kevinastone/nix-containers/prowlarr`](https://ghcr.io/kevinastone/nix-containers/prowlarr) | `linux/amd64`, `linux/arm64` | Indexer manager/proxy built on the popular arr .net/reactjs base stack ([recipe](nix/containers/prowlarr/default.nix)) |
+| [`qbittorrent`](nix/containers/qbittorrent/README.md) | [`ghcr.io/kevinastone/nix-containers/qbittorrent`](https://ghcr.io/kevinastone/nix-containers/qbittorrent) | `linux/amd64`, `linux/arm64` | Featureful free software BitTorrent client ([recipe](nix/containers/qbittorrent/default.nix)) |
+| [`radarr`](nix/containers/radarr/README.md) | [`ghcr.io/kevinastone/nix-containers/radarr`](https://ghcr.io/kevinastone/nix-containers/radarr) | `linux/amd64`, `linux/arm64` | Usenet/BitTorrent movie downloader ([recipe](nix/containers/radarr/default.nix)) |
+| [`sabnzbd`](nix/containers/sabnzbd/README.md) | [`ghcr.io/kevinastone/nix-containers/sabnzbd`](https://ghcr.io/kevinastone/nix-containers/sabnzbd) | `linux/amd64`, `linux/arm64` | Usenet NZB downloader, par2 repairer and auto extracting server ([recipe](nix/containers/sabnzbd/default.nix)) |
+| [`sonarr`](nix/containers/sonarr/README.md) | [`ghcr.io/kevinastone/nix-containers/sonarr`](https://ghcr.io/kevinastone/nix-containers/sonarr) | `linux/amd64`, `linux/arm64` | Smart PVR for newsgroup and bittorrent users ([recipe](nix/containers/sonarr/default.nix)) |
 <!-- END:CONTAINER_CATALOG -->
 
 ---

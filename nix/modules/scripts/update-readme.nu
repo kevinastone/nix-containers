@@ -11,7 +11,8 @@ def render-row [c: record]: nothing -> string {
     } else {
         $recipe
     }
-    $"| [`($c.name)`]\(($link)\) | `ghcr.io/kevinastone/nix-containers/($c.name)` | ($platforms) | ($desc) |"
+    let image = $"ghcr.io/kevinastone/nix-containers/($c.name)"
+    $"| [`($c.name)`]\(($link)\) | [`($image)`]\(https://($image)\) | ($platforms) | ($desc) |"
 }
 
 def render-catalog [catalog: list<record>]: nothing -> string {
