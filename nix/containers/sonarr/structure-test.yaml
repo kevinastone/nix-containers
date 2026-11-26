@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  user: "65532:65532"
+  workdir: "/config"
+  cmd: ["--nobrowser", "--data=/config"]
+  exposedPorts: ["8989"]
+  volumes: ["/config"]
+  envVars:
+    - key: "DOTNET_EnableDiagnostics"
+      value: "0"
+    - key: "SONARR__UPDATE__MECHANISM"
+      value: "External"
+    - key: "SONARR__UPDATE__AUTOMATICALLY"
+      value: "false"
+
+commandTests:
+  - name: "Sonarr help"
+    command: "Sonarr"
+    args: ["-?", "--data=/tmp"]
+    expectedOutput: ["Sonarr"]
+
+fileExistenceTests:
+  - name: "/config exists"
+    path: "/config"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/home/nonroot exists"
+    path: "/home/nonroot"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
+
+  - name: "/tmp exists"
+    path: "/tmp"
+    shouldExist: true
