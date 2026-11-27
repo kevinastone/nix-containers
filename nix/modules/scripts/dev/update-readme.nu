@@ -34,16 +34,15 @@ def render-row [c: record]: nothing -> string {
     let is_variant = ($c | get -o parent) != null
     let prefix = if $is_variant { "↳ " } else { "" }
     let image_url = $"https://ghcr.io/kevinastone/nix-containers/($c.name)"
+    let title_link = $"[`($c.name)`]\(($c.docPath)\)"
     let links = (
         [
-            (if $c.docPath != $c.recipePath { $"[readme]\(($c.docPath)\)" } else { null })
-            $"[image]\(($image_url)\)"
-            $"[recipe]\(($c.recipePath)\)"
+            $"[📦]\(($image_url) \"GHCR image\"\)"
+            $"[❄️]\(($c.recipePath) \"Nix recipe\"\)"
         ]
-        | compact
-        | str join ", "
+        | str join " "
     )
-    let name_cell = $"($prefix)`($c.name)` \(($links)\)"
+    let name_cell = $"($prefix)($title_link) ($links)"
     let non_root = fmt-bool ($c | get -o runAsNonRoot | default true)
     let ro_root = fmt-bool ($c | get -o readOnlyRoot | default true)
     let shell = fmt-bool ($c | get -o enableShell | default false)
