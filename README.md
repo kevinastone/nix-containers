@@ -49,6 +49,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise.
 
 | Container | Version | Description |
 | :--- | :--- | :--- |
+| `bazarr` ([readme](nix/containers/bazarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/bazarr), [recipe](nix/containers/bazarr/default.nix)) | `1.6.2` | Subtitle manager for Sonarr and Radarr |
 | `ffmpeg` ([readme](nix/containers/ffmpeg/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg), [recipe](nix/containers/ffmpeg/default.nix)) | `9.0.2` | Minimal headless FFmpeg container |
 | ↳ `ffmpeg-argo` ([readme](nix/containers/ffmpeg/argo/README.md), [image](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo), [recipe](nix/containers/ffmpeg/argo/default.nix)) | `9.0.2` | Minimal FFmpeg container with Argo Workflows progress reporting |
 | `prowlarr` ([readme](nix/containers/prowlarr/README.md), [image](https://ghcr.io/kevinastone/nix-containers/prowlarr), [recipe](nix/containers/prowlarr/default.nix)) | `3.0.2.5780` | Indexer manager/proxy built on the popular arr .net/reactjs base stack |
