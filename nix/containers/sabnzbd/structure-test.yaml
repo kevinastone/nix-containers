@@ -2,38 +2,11 @@
 schemaVersion: "2.0.0"
 
 metadataTest:
-  user: "65532:65532"
-  workdir: "/config"
   cmd: ["--browser", "0", "--server", "[::]:8080", "--config-file", "/config/sabnzbd.ini", "--console"]
   exposedPorts: ["8080"]
-  volumes: ["/config"]
-  envVars:
-    - key: "PYTHONDONTWRITEBYTECODE"
-      value: "1"
-    - key: "PYTHONUNBUFFERED"
-      value: "1"
 
 commandTests:
   - name: "sabnzbd version"
     command: "sabnzbd"
     args: ["--version"]
     expectedOutput: ["SABnzbd\\.py-"]
-
-fileExistenceTests:
-  - name: "/config exists"
-    path: "/config"
-    shouldExist: true
-    uid: 65532
-    gid: 65532
-    permissions: "drwxr-xr-x"
-
-  - name: "/home/nonroot exists"
-    path: "/home/nonroot"
-    shouldExist: true
-    uid: 65532
-    gid: 65532
-    permissions: "drwxr-xr-x"
-
-  - name: "/tmp exists"
-    path: "/tmp"
-    shouldExist: true

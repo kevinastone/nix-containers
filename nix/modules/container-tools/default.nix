@@ -20,6 +20,7 @@
         inherit lib;
         inherit (pkgs) dockerTools;
       };
+      mixins = import ./mixins;
       tests = import ./tests {
         inherit lib pkgs writeNuApplication;
       };
@@ -42,7 +43,7 @@
 
       config = {
         containerTools = tests // {
-          inherit buildLayeredImage;
+          inherit buildLayeredImage mixins;
         };
         _module.args.containerTools = config.containerTools;
       };

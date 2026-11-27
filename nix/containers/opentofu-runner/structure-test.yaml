@@ -2,7 +2,6 @@
 schemaVersion: "2.0.0"
 
 metadataTest:
-  user: "65532:65532"
   envVars:
     - key: "GNUPGHOME"
       value: "/tmp"
@@ -38,15 +37,3 @@ commandTests:
     command: "ssh"
     args: ["-V"]
     expectedError: ["OpenSSH_"]
-
-fileExistenceTests:
-  - name: "/home/runner exists"
-    path: "/home/runner"
-    shouldExist: true
-    uid: 65532
-    gid: 65532
-    permissions: "drwxr-xr-x"
-
-  - name: "/tmp exists"
-    path: "/tmp"
-    shouldExist: true

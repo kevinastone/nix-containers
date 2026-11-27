@@ -74,8 +74,21 @@ Any extra attributes accepted by `pkgs.dockerTools.buildLayeredImage` (such as `
 
 ### Testing (`structureTest` & `passthru.tests`)
 
-- `structureTest` (`path` or `listOf path`, default `[ ]`): Runs [`container-structure-test`](https://github.com/GoogleContainerTools/container-structure-test). When `runAsNonRoot = true`, every `commandTests` entry (without root `setup`) is also re-executed under `--read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges` to enforce Kubernetes `restricted` Pod Security Standard compatibility.
+- `structureTest` (`path`, `attrs`, or `listOf (path or attrs)`, default `[ ]`): Runs [`container-structure-test`](https://github.com/GoogleContainerTools/container-structure-test). Inline Nix attrsets automatically default `schemaVersion = "2.0.0"` and are rendered via `(pkgs.formats.yaml { }).generate` on the test host. `buildLayeredImage` automatically prepends a baseline rootfs test verifying `/tmp` (and, when `runAsNonRoot = true`, `Config.User` plus `${user.home}` ownership and permissions), so container `structure-test.yaml` files only need app-specific assertions. When `runAsNonRoot = true`, every `commandTests` entry (without root `setup`) is also re-executed under `--read-only --tmpfs /tmp --cap-drop=ALL --security-opt=no-new-privileges` (omitting `--read-only` when `readOnlyRoot = false`) to enforce Kubernetes `restricted` Pod Security Standard compatibility.
 - `passthru.tests` (`attrsOf (nullOr package)`): Add custom test executables (`<bin> <runtime> <image>`) or set a built-in test (`oci`, `structure`, `restricted`) to `null` to disable it.
+
+---
+
+## Reusable Mixins (`imports` & `containerTools.mixins`)
+
+Because `buildLayeredImage` evaluates configurations with `lib.evalModules`, any image or variant can compose reusable modules via `imports = [ ... ];` (`nix/modules/container-tools/mixins/`). Each built-in mixin also contributes its own `structureTest` assertions for the settings it configures:
+
+| Mixin | Effect |
+| :--- | :--- |
+| `containerTools.mixins.configDir` | Creates `/config` (`dirs."/config"`), sets `WorkingDir = "/config"` (`mkDefault`) and `Volumes."/config"`, and verifies them in `structureTest`. |
+| `containerTools.mixins.python` | Appends `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUNBUFFERED=1` to `config.Env` (and verifies them in `structureTest`). |
+| `containerTools.mixins.dotnet` | Appends `DOTNET_EnableDiagnostics=0` to `config.Env` (and verifies it in `structureTest`). |
+| `containerTools.mixins.servarr` | Imports `configDir` and `dotnet`, and appends `<NAME>__UPDATE__MECHANISM=External` and `<NAME>__UPDATE__AUTOMATICALLY=false` to `config.Env` (and verifies them in `structureTest`). |
 
 ---
 

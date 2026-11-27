@@ -19,6 +19,7 @@ let
     variantDefaultName: baseArgs:
     let
       stripped = removeAttrs baseArgs [
+        "imports"
         "name"
         "variants"
       ];
@@ -96,7 +97,12 @@ let
   cleanArgs = cleanCallPackageAttrs args;
 
   base = evalSingleConfig {
-    modules = [ { config = cleanArgs; } ];
+    modules = [
+      {
+        imports = cleanArgs.imports or [ ];
+        config = removeAttrs cleanArgs [ "imports" ];
+      }
+    ];
     hasExplicitUser = cleanArgs ? user;
   };
 
@@ -113,8 +119,14 @@ let
     ) "containerTools: nested `variants` inside variant '${variantName}' are not supported";
     evalSingleConfig {
       modules = [
-        { config = toVariantBaseArgs "${base.cfg.name}-${variantName}" cleanArgs; }
-        { config = variantArgs; }
+        {
+          imports = cleanArgs.imports or [ ];
+          config = toVariantBaseArgs "${base.cfg.name}-${variantName}" cleanArgs;
+        }
+        {
+          imports = variantArgs.imports or [ ];
+          config = removeAttrs variantArgs [ "imports" ];
+        }
       ];
       hasExplicitUser = variantArgs ? user;
     }

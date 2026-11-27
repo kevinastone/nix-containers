@@ -12,6 +12,10 @@ let
   };
 in
 containerTools.buildLayeredImage {
+  imports = [
+    containerTools.mixins.configDir
+    containerTools.mixins.python
+  ];
   package = bazarrHeadless;
   category = "media";
   # Bazarr's wrapper (bazarr.py) spawns a child worker (bazarr/main.py) that
@@ -19,9 +23,6 @@ containerTools.buildLayeredImage {
   # 156. Use tini (rather than catatonit) so we can both forward SIGINT to the
   # process group (-g) and remap exit status 156 to 0 (-e 156).
   contents = lib.optionals stdenv.hostPlatform.isLinux [ tini ];
-  dirs = {
-    "/config" = { };
-  };
   config = {
     Entrypoint = [
       "/bin/tini"
@@ -38,15 +39,7 @@ containerTools.buildLayeredImage {
       "--config"
       "/config"
     ];
-    WorkingDir = "/config";
     StopSignal = "SIGINT";
-    Volumes = {
-      "/config" = { };
-    };
-    Env = [
-      "PYTHONDONTWRITEBYTECODE=1"
-      "PYTHONUNBUFFERED=1"
-    ];
     ExposedPorts = {
       "6767/tcp" = { };
     };

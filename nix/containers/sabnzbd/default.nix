@@ -4,15 +4,16 @@
   unrar,
 }:
 containerTools.buildLayeredImage {
+  imports = [
+    containerTools.mixins.configDir
+    containerTools.mixins.python
+  ];
   package = sabnzbd;
   category = "media";
   licenses = [
     sabnzbd.meta.license
     unrar.meta.license
   ];
-  dirs = {
-    "/config" = { };
-  };
   config = {
     Cmd = [
       "--browser"
@@ -22,14 +23,6 @@ containerTools.buildLayeredImage {
       "--config-file"
       "/config/sabnzbd.ini"
       "--console"
-    ];
-    WorkingDir = "/config";
-    Volumes = {
-      "/config" = { };
-    };
-    Env = [
-      "PYTHONDONTWRITEBYTECODE=1"
-      "PYTHONUNBUFFERED=1"
     ];
     ExposedPorts = {
       "8080/tcp" = { };

@@ -88,7 +88,39 @@ let
         ]
       );
     };
+
+  mkRootfsTest =
+    {
+      runAsNonRoot,
+      user,
+      dirs,
+      imageUser,
+    }:
+    let
+      checkHome = runAsNonRoot && user.home != null && !(dirs ? ${user.home});
+    in
+    {
+      _name = "rootfs";
+      fileExistenceTests =
+        lib.optional checkHome {
+          name = "${user.home} exists";
+          path = user.home;
+          shouldExist = true;
+          inherit (user) uid gid;
+          permissions = "drwxr-xr-x";
+        }
+        ++ [
+          {
+            name = "/tmp exists";
+            path = "/tmp";
+            shouldExist = true;
+          }
+        ];
+    }
+    // lib.optionalAttrs runAsNonRoot {
+      metadataTest.user = imageUser;
+    };
 in
 {
-  inherit mkRootfs;
+  inherit mkRootfs mkRootfsTest;
 }

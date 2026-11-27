@@ -19,25 +19,10 @@ def render-structure-test [name: string]: nothing -> string {
         "# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json"
         'schemaVersion: "2.0.0"'
         ""
-        "metadataTest:"
-        '  user: "65532:65532"'
-        ""
         "commandTests:"
         $'  - name: "($name) version"'
         $'    command: "($name)"'
         '    args: ["--version"]'
-        ""
-        "fileExistenceTests:"
-        '  - name: "/home/nonroot exists"'
-        '    path: "/home/nonroot"'
-        "    shouldExist: true"
-        "    uid: 65532"
-        "    gid: 65532"
-        '    permissions: "drwxr-xr-x"'
-        ""
-        '  - name: "/tmp exists"'
-        '    path: "/tmp"'
-        "    shouldExist: true"
         ""
     ]
     | str join "\n"

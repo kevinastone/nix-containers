@@ -3,17 +3,11 @@
   qbittorrent-nox,
 }:
 containerTools.buildLayeredImage {
+  imports = [ containerTools.mixins.configDir ];
   name = "qbittorrent";
   package = qbittorrent-nox;
   category = "media";
-  dirs = {
-    "/config" = { };
-  };
   config = {
-    WorkingDir = "/config";
-    Volumes = {
-      "/config" = { };
-    };
     Env = [
       "QBT_CONFIRM_LEGAL_NOTICE=1"
       "HOME=/config"

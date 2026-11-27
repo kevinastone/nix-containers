@@ -40,8 +40,26 @@ let
     file = ./test-restricted.nu;
   };
 
+  yamlFormat = pkgs.formats.yaml { };
+
+  renderConfig =
+    prefix: idx: cfg:
+    if builtins.isAttrs cfg && !(lib.isDerivation cfg) then
+      let
+        fileName =
+          if cfg ? _name then "${cfg._name}-structure-test.yaml" else "${prefix}-${toString idx}.yaml";
+        spec = {
+          schemaVersion = "2.0.0";
+        }
+        // removeAttrs cfg [ "_name" ];
+      in
+      "${yamlFormat.generate fileName spec}"
+    else
+      "${cfg}";
+
   normalizeConfigs =
-    configs: if configs == null then [ ] else lib.unique (map (c: "${c}") (lib.toList configs));
+    prefix: configs:
+    if configs == null then [ ] else lib.unique (lib.imap1 (renderConfig prefix) (lib.toList configs));
 
   configFlags = lib.concatMap (c: [
     "--append-flags"
@@ -49,7 +67,10 @@ let
   ]);
 
   structureTest =
-    configs: wrapFlags "structure-test" structureTestBase (configFlags (normalizeConfigs configs));
+    configs:
+    wrapFlags "structure-test" structureTestBase (
+      configFlags (normalizeConfigs "structure-test" configs)
+    );
 
   restrictedTest =
     {
@@ -61,7 +82,7 @@ let
         "--add-flags"
         "--writable-root"
       ]
-      ++ configFlags (normalizeConfigs configs)
+      ++ configFlags (normalizeConfigs "structure-test" configs)
     );
 
   builtinOrder = [
@@ -79,7 +100,7 @@ let
       extraTests ? { },
     }:
     let
-      normalizedConfigs = normalizeConfigs structureTestConfig;
+      normalizedConfigs = normalizeConfigs "${name}-structure-test" structureTestConfig;
 
       defaultTests = {
         oci = ociTest;

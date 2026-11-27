@@ -118,9 +118,20 @@ let
         ${stream} | ${lib.getExe pigz} -nT
       '';
 
+      imageUser = mergedConfig.User or "root";
+
+      rootfsTest = rootfs.mkRootfsTest {
+        inherit
+          runAsNonRoot
+          user
+          dirs
+          imageUser
+          ;
+      };
+
       testSuiteArgs = {
         inherit name readOnlyRoot runAsNonRoot;
-        structureTestConfig = structureTest;
+        structureTestConfig = [ rootfsTest ] ++ structureTest;
       };
 
       testSuite = mkTestSuite (
@@ -154,9 +165,9 @@ let
             testSuiteArgs
             variants
             ;
+          inherit imageUser;
           imageName = name;
           imageTag = tag;
-          imageUser = mergedConfig.User or "root";
         }
         // lib.optionalAttrs (package != null) {
           inherit package;

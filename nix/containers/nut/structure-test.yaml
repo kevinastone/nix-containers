@@ -51,7 +51,3 @@ fileExistenceTests:
     uid: 100
     gid: 100
     permissions: "drwxr-x---"
-
-  - name: "/tmp exists"
-    path: "/tmp"
-    shouldExist: true

@@ -68,7 +68,8 @@ Prefer Jujutsu (`jj`) over `git` for all version-control operations (e.g., `jj s
     - `schema.nix`: Declarative `mkOption` and submodule definitions for `buildLayeredImage` (`category`, `user`, `extraUsers`, `dirs`, `enableShell`, `structureTest`, `config`, `variants`, etc.).
     - `eval.nix`: `lib.evalModules` evaluator, variant option inheritance (`toVariantBaseArgs`), and user/name assertions.
     - `oci.nix`: Pure OCI label, platform metadata, `Env` deduplication, and runtime `Config` helpers (`mkLabels`, `mkMeta`, `mkConfig`).
-    - `rootfs.nix`: `fakeNss` `/etc/passwd` + `/etc/group` builder and declarative directory `mkdir`/`chmod`/`chown` layer commands.
+    - `rootfs.nix`: `fakeNss` `/etc/passwd` + `/etc/group` builder, declarative directory `mkdir`/`chmod`/`chown` layer commands, and baseline rootfs `structureTest` generation.
+    - `mixins/`: Reusable `lib.evalModules` mixins (`config-dir.nix`, `python.nix`, `dotnet.nix`, `servarr.nix`) with built-in `structureTest` assertions.
     - `build-image.nix`: Thin wrapper around `pkgs.dockerTools.buildLayeredImage`, `closureInfo`, `streamLayeredImage`, variant builds, and test suite wiring.
     - `tests/`:
       - `default.nix`: Test suite builder (`ociTest`, `structureTest`, `restrictedTest`, `mkTestSuite`).

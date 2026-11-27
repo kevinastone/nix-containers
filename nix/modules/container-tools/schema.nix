@@ -148,6 +148,15 @@ let
     (types.listOf licenseType)
   ];
 
+  structureTestSpecType = types.addCheck (types.attrsOf types.anything) (v: !(lib.isDerivation v));
+
+  structureTestItemType = types.oneOf [
+    types.path
+    types.str
+    types.package
+    structureTestSpecType
+  ];
+
   mkImageModule =
     {
       defaultSource,
@@ -258,9 +267,9 @@ let
           description = "Declarative directories created in the image with mode, uid, and gid.";
         };
         structureTest = mkOption {
-          type = types.coercedTo types.path lib.singleton (types.listOf types.path);
+          type = types.coercedTo structureTestItemType lib.singleton (types.listOf structureTestItemType);
           default = [ ];
-          description = "Path(s) to container-structure-test YAML configuration(s).";
+          description = "container-structure-test configuration(s) as YAML path(s) or Nix attrset spec(s).";
         };
         contents = mkOption {
           type = types.coercedTo types.package lib.singleton (types.listOf types.package);

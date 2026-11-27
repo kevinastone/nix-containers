@@ -2,40 +2,11 @@
 schemaVersion: "2.0.0"
 
 metadataTest:
-  user: "65532:65532"
-  workdir: "/config"
   cmd: ["--nobrowser", "--data=/config"]
   exposedPorts: ["7878"]
-  volumes: ["/config"]
-  envVars:
-    - key: "DOTNET_EnableDiagnostics"
-      value: "0"
-    - key: "RADARR__UPDATE__MECHANISM"
-      value: "External"
-    - key: "RADARR__UPDATE__AUTOMATICALLY"
-      value: "false"
 
 commandTests:
   - name: "Radarr help"
     command: "Radarr"
     args: ["-?", "--data=/tmp"]
     expectedOutput: ["Radarr"]
-
-fileExistenceTests:
-  - name: "/config exists"
-    path: "/config"
-    shouldExist: true
-    uid: 65532
-    gid: 65532
-    permissions: "drwxr-xr-x"
-
-  - name: "/home/nonroot exists"
-    path: "/home/nonroot"
-    shouldExist: true
-    uid: 65532
-    gid: 65532
-    permissions: "drwxr-xr-x"
-
-  - name: "/tmp exists"
-    path: "/tmp"
-    shouldExist: true

@@ -3,24 +3,15 @@
   sonarr,
 }:
 containerTools.buildLayeredImage {
+  imports = [ containerTools.mixins.servarr ];
   package = sonarr;
   category = "media";
-  dirs = {
-    "/config" = { };
-  };
   config = {
     Cmd = [
       "--nobrowser"
       "--data=/config"
     ];
-    WorkingDir = "/config";
-    Volumes = {
-      "/config" = { };
-    };
     Env = [
-      "DOTNET_EnableDiagnostics=0"
-      "SONARR__UPDATE__MECHANISM=External"
-      "SONARR__UPDATE__AUTOMATICALLY=false"
       "SONARR__UPDATE__BRANCH=develop"
     ];
     ExposedPorts = {
