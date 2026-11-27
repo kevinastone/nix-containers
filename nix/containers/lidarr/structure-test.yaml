@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--nobrowser", "--data=/config"]
+  exposedPorts: ["8686"]
+
+commandTests:
+  - name: "Lidarr help"
+    command: "Lidarr"
+    args: ["-?", "--data=/tmp"]
+    expectedOutput: ["Lidarr"]
