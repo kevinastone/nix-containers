@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--foreground", "--config-dir", "/config"]
+  exposedPorts: ["9091", "51413"]
+  envVars:
+    - key: "HOME"
+      value: "/config"
+
+commandTests:
+  - name: "transmission-daemon version"
+    command: "transmission-daemon"
+    args: ["--version"]
+    expectedError: ["transmission-daemon "]
