@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--supervised", "--disable-syslog", "--config", "/etc/dnsdist/dnsdist.conf"]
+  exposedPorts: ["53", "8083"]
+
+commandTests:
+  - name: "dnsdist version"
+    command: "dnsdist"
+    args: ["--version"]
+    expectedOutput: ["dnsdist "]
+
+fileExistenceTests:
+  - name: "/etc/dnsdist exists"
+    path: "/etc/dnsdist"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"
