@@ -50,6 +50,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 
 
 | Container | Version | Non-Root | RO Root | Shell | Features | Description |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| [`exportarr`](nix/containers/exportarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/exportarr "GHCR image") [❄️](nix/containers/exportarr/default.nix "Nix recipe") | `2.3.0` | ✓ | ✓ | — | — | AIO Prometheus Exporter for Sonarr, Radarr or Lidarr |
 | [`nut`](nix/containers/nut/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/nut "GHCR image") [❄️](nix/containers/nut/default.nix "Nix recipe") | `2.8.5` | — | ✓ | ✓ | — | Network UPS Tools |
 | [`prometheus-nut-exporter`](nix/containers/prometheus-nut-exporter/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/prometheus-nut-exporter "GHCR image") [❄️](nix/containers/prometheus-nut-exporter/default.nix "Nix recipe") | `3.2.5` | ✓ | ✓ | — | — | Prometheus exporter for Network UPS Tools |
 

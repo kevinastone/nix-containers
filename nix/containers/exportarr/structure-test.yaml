@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  exposedPorts: ["9707"]
+  envVars:
+    - key: "PORT"
+      value: "9707"
+
+commandTests:
+  - name: "exportarr help"
+    command: "exportarr"
+    args: ["--help"]
+    expectedOutput: ["Prometheus exporter for \\*arr applications"]
