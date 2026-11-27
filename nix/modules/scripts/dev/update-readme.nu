@@ -48,7 +48,7 @@ def render-row [c: record]: nothing -> string {
     let shell = fmt-bool ($c | get -o enableShell | default false)
     let features = render-features $c
     let desc = $c.description | str trim
-    $"| ($name_cell) | `($c.version)` | ($non_root) | ($ro_root) | ($shell) | ($features) | ($desc) |"
+    $"| ($name_cell) | ($non_root) | ($ro_root) | ($shell) | ($features) | ($desc) |"
 }
 
 def order-entries [entries: list<record>]: nothing -> list<record> {
@@ -71,8 +71,8 @@ def render-section [title: string, entries: list<record>]: nothing -> string {
     [
         $"### ($title)"
         ""
-        "| Container | Version | Non-Root | RO Root | Shell | Features | Description |"
-        "| :--- | :--- | :---: | :---: | :---: | :---: | :--- |"
+        "| Container | Non-Root | RO Root | Shell | Features | Description |"
+        "| :--- | :---: | :---: | :---: | :---: | :--- |"
         ...($ordered | each { render-row $in })
     ]
     | str join "\n"
