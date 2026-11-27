@@ -2,12 +2,12 @@
   lib,
   stdenv,
   callPackage,
+  catatonit,
   containerTools,
   gitMinimal,
   gnupg,
   openssh,
   opentofu,
-  tini,
 }:
 let
   tf-runner = callPackage ./tf-runner.nix { };
@@ -25,10 +25,10 @@ containerTools.buildLayeredImage {
     openssh
     opentofu
   ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [ tini ];
+  ++ lib.optionals stdenv.hostPlatform.isLinux [ catatonit ];
   config = {
     Entrypoint = [
-      "/bin/tini"
+      "/bin/catatonit"
       "--"
       (lib.getExe tf-runner)
     ];

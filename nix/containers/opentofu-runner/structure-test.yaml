@@ -19,10 +19,10 @@ commandTests:
     args: ["--help"]
     expectedError: ["grpc-port"]
 
-  - name: "tini version"
-    command: "tini"
+  - name: "catatonit version"
+    command: "catatonit"
     args: ["--version"]
-    expectedOutput: ["tini version"]
+    expectedOutput: ["_catatonit"]
 
   - name: "git version"
     command: "git"
