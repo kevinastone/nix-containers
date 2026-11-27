@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--NoUpdates", "--DataFolder", "/config"]
+  exposedPorts: ["9117"]
+  envVars:
+    - key: "HOME"
+      value: "/config"
+    - key: "XDG_CONFIG_HOME"
+      value: "/config"
+    - key: "XDG_DATA_HOME"
+      value: "/config"
+
+commandTests:
+  - name: "jackett version"
+    command: "jackett"
+    args: ["--version", "--DataFolder", "/tmp"]
+    exitCode: 1
+    expectedOutput: ["Jackett v"]
