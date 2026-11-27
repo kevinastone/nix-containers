@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--nolaunch", "--datadir", "/config", "--config", "/config/config.ini"]
+  exposedPorts: ["8181"]
+
+commandTests:
+  - name: "tautulli help"
+    command: "tautulli"
+    args: ["--help"]
+    expectedOutput: ["--datadir", "--nolaunch"]

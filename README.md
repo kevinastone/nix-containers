@@ -58,6 +58,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 
 | [`radarr`](nix/containers/radarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/radarr "GHCR image") [❄️](nix/containers/radarr/default.nix "Nix recipe") | `7.0.3.10918` | ✓ | ✓ | — | — | Usenet/BitTorrent movie downloader |
 | [`sabnzbd`](nix/containers/sabnzbd/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sabnzbd "GHCR image") [❄️](nix/containers/sabnzbd/default.nix "Nix recipe") | `5.1.3` | ✓ | ✓ | — | — | Usenet NZB downloader, par2 repairer and auto extracting server |
 | [`sonarr`](nix/containers/sonarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sonarr "GHCR image") [❄️](nix/containers/sonarr/default.nix "Nix recipe") | `5.0.0.2997` | ✓ | ✓ | — | — | Smart PVR for newsgroup and bittorrent users |
+| [`tautulli`](nix/containers/tautulli/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/tautulli "GHCR image") [❄️](nix/containers/tautulli/default.nix "Nix recipe") | `2.19.1` | ✓ | ✓ | — | — | Python based monitoring and tracking tool for Plex Media Server |
 <!-- END:CONTAINER_CATALOG -->
 
 ---
