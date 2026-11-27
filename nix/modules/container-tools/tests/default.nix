@@ -40,7 +40,8 @@ let
     file = ./test-restricted.nu;
   };
 
-  normalizeConfigs = configs: if configs == null then [ ] else map toString (lib.toList configs);
+  normalizeConfigs =
+    configs: if configs == null then [ ] else lib.unique (map (c: "${c}") (lib.toList configs));
 
   configFlags = lib.concatMap (c: [
     "--append-flags"
