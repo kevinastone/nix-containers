@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["-p", "/config/app.db", "-g", "/config/gdrive.db"]
+  exposedPorts: ["8083"]
+  volumes: ["/books"]
+  envVars:
+    - key: "CALIBRE_DBPATH"
+      value: "/config"
+    - key: "CACHE_DIRECTORY"
+      value: "/tmp"
+
+commandTests:
+  - name: "calibre-web version"
+    command: "calibre-web"
+    args: ["--version"]
+    expectedOutput: ["Calibre-Web version:"]
+
+fileExistenceTests:
+  - name: "/books exists"
+    path: "/books"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"

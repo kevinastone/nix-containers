@@ -50,6 +50,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 
 | Container | Version | Non-Root | RO Root | Shell | Features | Description |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | [`bazarr`](nix/containers/bazarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/bazarr "GHCR image") [❄️](nix/containers/bazarr/default.nix "Nix recipe") | `1.6.2` | ✓ | ✓ | — | — | Subtitle manager for Sonarr and Radarr |
+| [`calibre-web`](nix/containers/calibre-web/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/calibre-web "GHCR image") [❄️](nix/containers/calibre-web/default.nix "Nix recipe") | `0.6.27` | ✓ | ✓ | — | — | Web app for browsing, reading and downloading eBooks stored in a Calibre database |
 | [`ffmpeg`](nix/containers/ffmpeg/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg "GHCR image") [❄️](nix/containers/ffmpeg/default.nix "Nix recipe") | `9.0.2` | ✓ | ✓ | — | — | Minimal headless FFmpeg container |
 | ↳ [`ffmpeg-argo`](nix/containers/ffmpeg/argo/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo "GHCR image") [❄️](nix/containers/ffmpeg/argo/default.nix "Nix recipe") | `9.0.2` | ✓ | ✓ | ✓ | — | Minimal FFmpeg container with Argo Workflows progress reporting |
 | [`lidarr`](nix/containers/lidarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/lidarr "GHCR image") [❄️](nix/containers/lidarr/default.nix "Nix recipe") | `3.1.6.5079` | ✓ | ✓ | — | — | Usenet/BitTorrent music downloader |
