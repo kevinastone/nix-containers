@@ -28,49 +28,49 @@ ghcr.io/kevinastone/nix-containers/<image>:<tag>
 
 ## 🐳 Containers
 
-All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 GHCR image · ❄️ Nix recipe).
+All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 GHCR image · ❄️ Nix recipe · 👤 Non-root · 🔒 Read-only root · 💻 Shell included).
 
 <!-- BEGIN:CONTAINER_CATALOG -->
 ### Infrastructure & Identity
 
-| Container | Non-Root | RO Root | Shell | Features | Description |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| [`keycloak`](nix/containers/keycloak/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/keycloak "GHCR image") [❄️](nix/containers/keycloak/default.nix "Nix recipe") | ✓ | ✓ | ✓ | — | Identity and access management for modern applications and services |
-| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/opentofu-runner "GHCR image") [❄️](nix/containers/opentofu-runner/default.nix "Nix recipe") | ✓ | ✓ | ✓ | — | Flux Tofu Controller runner with OpenTofu |
+| Container | Features | Description |
+| :--- | :---: | :--- |
+| [`keycloak`](nix/containers/keycloak/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/keycloak "GHCR image") [❄️](nix/containers/keycloak/default.nix "Nix recipe") | 👤 🔒 💻 | Identity and access management for modern applications and services |
+| [`opentofu-runner`](nix/containers/opentofu-runner/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/opentofu-runner "GHCR image") [❄️](nix/containers/opentofu-runner/default.nix "Nix recipe") | 👤 🔒 💻 | Flux Tofu Controller runner with OpenTofu |
 
 ### Networking
 
-| Container | Non-Root | RO Root | Shell | Features | Description |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| [`dnsdist`](nix/containers/dnsdist/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/dnsdist "GHCR image") [❄️](nix/containers/dnsdist/default.nix "Nix recipe") | ✓ | ✓ | — | — | DNS Loadbalancer |
-| [`iperf3`](nix/containers/iperf3/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/iperf3 "GHCR image") [❄️](nix/containers/iperf3/default.nix "Nix recipe") | ✓ | ✓ | — | — | Tool to measure IP bandwidth using UDP or TCP |
-| [`unbound`](nix/containers/unbound/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/unbound "GHCR image") [❄️](nix/containers/unbound/default.nix "Nix recipe") | ✓ | ✓ | — | — | Validating, recursive, and caching DNS resolver |
+| Container | Features | Description |
+| :--- | :---: | :--- |
+| [`dnsdist`](nix/containers/dnsdist/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/dnsdist "GHCR image") [❄️](nix/containers/dnsdist/default.nix "Nix recipe") | 👤 🔒 | DNS Loadbalancer |
+| [`iperf3`](nix/containers/iperf3/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/iperf3 "GHCR image") [❄️](nix/containers/iperf3/default.nix "Nix recipe") | 👤 🔒 | Tool to measure IP bandwidth using UDP or TCP |
+| [`unbound`](nix/containers/unbound/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/unbound "GHCR image") [❄️](nix/containers/unbound/default.nix "Nix recipe") | 👤 🔒 | Validating, recursive, and caching DNS resolver |
 
 ### Monitoring & Hardware
 
-| Container | Non-Root | RO Root | Shell | Features | Description |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| [`exportarr`](nix/containers/exportarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/exportarr "GHCR image") [❄️](nix/containers/exportarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | AIO Prometheus Exporter for Sonarr, Radarr or Lidarr |
-| [`nut`](nix/containers/nut/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/nut "GHCR image") [❄️](nix/containers/nut/default.nix "Nix recipe") | — | ✓ | ✓ | — | Network UPS Tools |
-| [`prometheus-nut-exporter`](nix/containers/prometheus-nut-exporter/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/prometheus-nut-exporter "GHCR image") [❄️](nix/containers/prometheus-nut-exporter/default.nix "Nix recipe") | ✓ | ✓ | — | — | Prometheus exporter for Network UPS Tools |
+| Container | Features | Description |
+| :--- | :---: | :--- |
+| [`exportarr`](nix/containers/exportarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/exportarr "GHCR image") [❄️](nix/containers/exportarr/default.nix "Nix recipe") | 👤 🔒 | AIO Prometheus Exporter for Sonarr, Radarr or Lidarr |
+| [`nut`](nix/containers/nut/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/nut "GHCR image") [❄️](nix/containers/nut/default.nix "Nix recipe") | 🔒 💻 | Network UPS Tools |
+| [`prometheus-nut-exporter`](nix/containers/prometheus-nut-exporter/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/prometheus-nut-exporter "GHCR image") [❄️](nix/containers/prometheus-nut-exporter/default.nix "Nix recipe") | 👤 🔒 | Prometheus exporter for Network UPS Tools |
 
 ### Media & Downloads
 
-| Container | Non-Root | RO Root | Shell | Features | Description |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| [`bazarr`](nix/containers/bazarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/bazarr "GHCR image") [❄️](nix/containers/bazarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | Subtitle manager for Sonarr and Radarr |
-| [`calibre-web`](nix/containers/calibre-web/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/calibre-web "GHCR image") [❄️](nix/containers/calibre-web/default.nix "Nix recipe") | ✓ | ✓ | — | — | Web app for browsing, reading and downloading eBooks stored in a Calibre database |
-| [`ffmpeg`](nix/containers/ffmpeg/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg "GHCR image") [❄️](nix/containers/ffmpeg/default.nix "Nix recipe") | ✓ | ✓ | — | — | Minimal headless FFmpeg container |
-| ↳ [`ffmpeg-argo`](nix/containers/ffmpeg/argo/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo "GHCR image") [❄️](nix/containers/ffmpeg/argo/default.nix "Nix recipe") | ✓ | ✓ | ✓ | — | Minimal FFmpeg container with Argo Workflows progress reporting |
-| [`jackett`](nix/containers/jackett/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/jackett "GHCR image") [❄️](nix/containers/jackett/default.nix "Nix recipe") | ✓ | ✓ | — | — | API Support for your favorite torrent trackers |
-| [`lidarr`](nix/containers/lidarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/lidarr "GHCR image") [❄️](nix/containers/lidarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | Usenet/BitTorrent music downloader |
-| [`prowlarr`](nix/containers/prowlarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/prowlarr "GHCR image") [❄️](nix/containers/prowlarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | Indexer manager/proxy built on the popular arr .net/reactjs base stack |
-| [`qbittorrent`](nix/containers/qbittorrent/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/qbittorrent "GHCR image") [❄️](nix/containers/qbittorrent/default.nix "Nix recipe") | ✓ | ✓ | — | — | Featureful free software BitTorrent client |
-| [`radarr`](nix/containers/radarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/radarr "GHCR image") [❄️](nix/containers/radarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | Usenet/BitTorrent movie downloader |
-| [`sabnzbd`](nix/containers/sabnzbd/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sabnzbd "GHCR image") [❄️](nix/containers/sabnzbd/default.nix "Nix recipe") | ✓ | ✓ | — | — | Usenet NZB downloader, par2 repairer and auto extracting server |
-| [`sonarr`](nix/containers/sonarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sonarr "GHCR image") [❄️](nix/containers/sonarr/default.nix "Nix recipe") | ✓ | ✓ | — | — | Smart PVR for newsgroup and bittorrent users |
-| [`tautulli`](nix/containers/tautulli/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/tautulli "GHCR image") [❄️](nix/containers/tautulli/default.nix "Nix recipe") | ✓ | ✓ | — | — | Python based monitoring and tracking tool for Plex Media Server |
-| [`transmission`](nix/containers/transmission/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/transmission "GHCR image") [❄️](nix/containers/transmission/default.nix "Nix recipe") | ✓ | ✓ | — | — | Fast, easy and free BitTorrent client |
+| Container | Features | Description |
+| :--- | :---: | :--- |
+| [`bazarr`](nix/containers/bazarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/bazarr "GHCR image") [❄️](nix/containers/bazarr/default.nix "Nix recipe") | 👤 🔒 | Subtitle manager for Sonarr and Radarr |
+| [`calibre-web`](nix/containers/calibre-web/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/calibre-web "GHCR image") [❄️](nix/containers/calibre-web/default.nix "Nix recipe") | 👤 🔒 | Web app for browsing, reading and downloading eBooks stored in a Calibre database |
+| [`ffmpeg`](nix/containers/ffmpeg/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg "GHCR image") [❄️](nix/containers/ffmpeg/default.nix "Nix recipe") | 👤 🔒 | Minimal headless FFmpeg container |
+| ↳ [`ffmpeg-argo`](nix/containers/ffmpeg/argo/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/ffmpeg-argo "GHCR image") [❄️](nix/containers/ffmpeg/argo/default.nix "Nix recipe") | 👤 🔒 💻 | Minimal FFmpeg container with Argo Workflows progress reporting |
+| [`jackett`](nix/containers/jackett/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/jackett "GHCR image") [❄️](nix/containers/jackett/default.nix "Nix recipe") | 👤 🔒 | API Support for your favorite torrent trackers |
+| [`lidarr`](nix/containers/lidarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/lidarr "GHCR image") [❄️](nix/containers/lidarr/default.nix "Nix recipe") | 👤 🔒 | Usenet/BitTorrent music downloader |
+| [`prowlarr`](nix/containers/prowlarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/prowlarr "GHCR image") [❄️](nix/containers/prowlarr/default.nix "Nix recipe") | 👤 🔒 | Indexer manager/proxy built on the popular arr .net/reactjs base stack |
+| [`qbittorrent`](nix/containers/qbittorrent/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/qbittorrent "GHCR image") [❄️](nix/containers/qbittorrent/default.nix "Nix recipe") | 👤 🔒 | Featureful free software BitTorrent client |
+| [`radarr`](nix/containers/radarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/radarr "GHCR image") [❄️](nix/containers/radarr/default.nix "Nix recipe") | 👤 🔒 | Usenet/BitTorrent movie downloader |
+| [`sabnzbd`](nix/containers/sabnzbd/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sabnzbd "GHCR image") [❄️](nix/containers/sabnzbd/default.nix "Nix recipe") | 👤 🔒 | Usenet NZB downloader, par2 repairer and auto extracting server |
+| [`sonarr`](nix/containers/sonarr/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/sonarr "GHCR image") [❄️](nix/containers/sonarr/default.nix "Nix recipe") | 👤 🔒 | Smart PVR for newsgroup and bittorrent users |
+| [`tautulli`](nix/containers/tautulli/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/tautulli "GHCR image") [❄️](nix/containers/tautulli/default.nix "Nix recipe") | 👤 🔒 | Python based monitoring and tracking tool for Plex Media Server |
+| [`transmission`](nix/containers/transmission/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/transmission "GHCR image") [❄️](nix/containers/transmission/default.nix "Nix recipe") | 👤 🔒 | Fast, easy and free BitTorrent client |
 <!-- END:CONTAINER_CATALOG -->
 
 ---
