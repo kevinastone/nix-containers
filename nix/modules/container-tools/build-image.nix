@@ -31,7 +31,9 @@ let
         source
         licenses
         extraTags
+        features
         runAsNonRoot
+        readOnlyRoot
         user
         extraUsers
         includeCaCerts
@@ -117,7 +119,7 @@ let
       '';
 
       testSuiteArgs = {
-        inherit name runAsNonRoot;
+        inherit name readOnlyRoot runAsNonRoot;
         structureTestConfig = structureTest;
       };
 
@@ -144,6 +146,8 @@ let
             closure
             enableShell
             extraTags
+            features
+            readOnlyRoot
             runAsNonRoot
             stream
             streamArchive

@@ -212,10 +212,20 @@ let
           default = [ ];
           description = "Additional OCI image tags published alongside version and semver tags.";
         };
+        features = mkOption {
+          type = types.listOf types.nonEmptyStr;
+          default = [ ];
+          description = "Notable container traits or capabilities surfaced in the catalog Features column.";
+        };
         runAsNonRoot = mkOption {
           type = types.bool;
           default = true;
           description = "Run container as a numeric non-root user and enable restricted PSS tests.";
+        };
+        readOnlyRoot = mkOption {
+          type = types.bool;
+          default = true;
+          description = "Support running with a read-only root filesystem and enforce --read-only in restricted PSS tests.";
         };
         user = mkOption {
           type = userSubmodule;

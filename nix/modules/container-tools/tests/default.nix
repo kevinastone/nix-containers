@@ -51,7 +51,17 @@ let
     configs: wrapFlags "structure-test" structureTestBase (configFlags (normalizeConfigs configs));
 
   restrictedTest =
-    configs: wrapFlags "restricted-test" restrictedTestBase (configFlags (normalizeConfigs configs));
+    {
+      configs,
+      readOnlyRoot ? true,
+    }:
+    wrapFlags "restricted-test" restrictedTestBase (
+      lib.optionals (!readOnlyRoot) [
+        "--add-flags"
+        "--writable-root"
+      ]
+      ++ configFlags (normalizeConfigs configs)
+    );
 
   builtinOrder = [
     "oci"
@@ -63,6 +73,7 @@ let
     {
       name,
       runAsNonRoot ? true,
+      readOnlyRoot ? true,
       structureTestConfig ? [ ],
       extraTests ? { },
     }:
@@ -76,7 +87,10 @@ let
         structure = structureTest normalizedConfigs;
       }
       // lib.optionalAttrs runAsNonRoot {
-        restricted = restrictedTest normalizedConfigs;
+        restricted = restrictedTest {
+          configs = normalizedConfigs;
+          inherit readOnlyRoot;
+        };
       };
 
       tests = lib.filterAttrs (_: v: v != null) (defaultTests // extraTests);

@@ -6,6 +6,7 @@
 let
   additiveTopKeys = [
     "contents"
+    "features"
     "structureTest"
     "extraTags"
     "extraCommands"

@@ -10,6 +10,26 @@ const CATEGORIES = [
 
 const DEFAULT_PLATFORMS = ["linux/amd64", "linux/arm64"]
 
+def fmt-bool [val: bool]: nothing -> string {
+    if $val { "✓" } else { "—" }
+}
+
+def render-features [c: record]: nothing -> string {
+    let explicit = $c | get -o features | default []
+    let platform_features = if $c.platforms != $DEFAULT_PLATFORMS and ($c.platforms | is-not-empty) {
+        let arches = $c.platforms | each { str replace "linux/" "" } | str join ","
+        [$"($arches)-only"]
+    } else {
+        []
+    }
+    let all_features = [...$explicit, ...$platform_features] | uniq
+    if ($all_features | is-empty) {
+        "—"
+    } else {
+        $all_features | each { $"`($in)`" } | str join " "
+    }
+}
+
 def render-row [c: record]: nothing -> string {
     let is_variant = ($c | get -o parent) != null
     let prefix = if $is_variant { "↳ " } else { "" }
@@ -24,14 +44,12 @@ def render-row [c: record]: nothing -> string {
         | str join ", "
     )
     let name_cell = $"($prefix)`($c.name)` \(($links)\)"
-    let platform_note = if $c.platforms != $DEFAULT_PLATFORMS {
-        let plats = $c.platforms | each { $"`($in)`" } | str join ", "
-        $" _\(($plats) only\)_"
-    } else {
-        ""
-    }
-    let desc = $"($c.description)($platform_note)" | str trim
-    $"| ($name_cell) | `($c.version)` | ($desc) |"
+    let non_root = fmt-bool ($c | get -o runAsNonRoot | default true)
+    let ro_root = fmt-bool ($c | get -o readOnlyRoot | default true)
+    let shell = fmt-bool ($c | get -o enableShell | default false)
+    let features = render-features $c
+    let desc = $c.description | str trim
+    $"| ($name_cell) | `($c.version)` | ($non_root) | ($ro_root) | ($shell) | ($features) | ($desc) |"
 }
 
 def order-entries [entries: list<record>]: nothing -> list<record> {
@@ -54,8 +72,8 @@ def render-section [title: string, entries: list<record>]: nothing -> string {
     [
         $"### ($title)"
         ""
-        "| Container | Version | Description |"
-        "| :--- | :--- | :--- |"
+        "| Container | Version | Non-Root | RO Root | Shell | Features | Description |"
+        "| :--- | :--- | :---: | :---: | :---: | :---: | :--- |"
         ...($ordered | each { render-row $in })
     ]
     | str join "\n"

@@ -12,8 +12,10 @@ map (
     inherit (drv)
       category
       enableShell
+      features
       imageTag
       imageUser
+      readOnlyRoot
       runAsNonRoot
       sourceDir
       variantKey
@@ -45,6 +47,8 @@ map (
       category
       docPath
       enableShell
+      features
+      readOnlyRoot
       recipePath
       runAsNonRoot
       sourceDir

@@ -2,6 +2,7 @@
 def main [
     runtime: string # Container runtime (docker or podman)
     image: string # Loaded image reference
+    --writable-root # Skip --read-only flag when readOnlyRoot = false
     ...configs: path # Optional container-structure-test YAML(s) whose commandTests are run restricted
 ] {
     let user = (
@@ -49,10 +50,12 @@ def main [
         let args = $test | get -o args | default []
         let expected_code = $test | get -o exitCode | default 0
 
+        let ro_flags = if $writable_root { [] } else { ["--read-only"] }
+
         print $"Running restricted PSS test '($test.name)'..."
         let res = (
             ^$runtime run --rm
-            --read-only
+            ...$ro_flags
             --tmpfs /tmp:rw,nosuid,nodev,size=64m
             --cap-drop=ALL
             --security-opt=no-new-privileges

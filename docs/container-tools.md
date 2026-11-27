@@ -42,12 +42,14 @@ Passing `package` automatically derives `name` (`package.pname`), `tag` (`packag
 | `source` | `nonEmptyStr` | Repo GitHub URL | Sets `org.opencontainers.image.source`. |
 | `licenses` | `nullOr licenseType` | `package.meta.license` | SPDX string or Nixpkgs `lib.licenses` value(s) for `org.opencontainers.image.licenses`. |
 | `extraTags` | `listOf str` | `[ ]` | Additional mutable tags published alongside SemVer tags and `:main`. |
+| `features` | `listOf nonEmptyStr` | `[ ]` | Notable container traits or capabilities surfaced in the catalog `Features` column. |
 
 ### Users, Rootfs & Base Contents
 
 | Option | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `runAsNonRoot` | `bool` | `true` | Configures a numeric `uid:gid` `Config.User`, creates `/etc/passwd` + `/etc/group` entries, and enables Kubernetes `restricted` PSS tests. |
+| `readOnlyRoot` | `bool` | `true` | Declares read-only root filesystem compatibility and enforces `--read-only` in `restricted` PSS tests. |
 | `user.name` | `nonEmptyStr` | `"nonroot"` | Primary non-root username when `runAsNonRoot = true`. |
 | `user.uid` | `ints.positive` | `65532` | Primary numeric UID (`> 0`). |
 | `user.gid` | `ints.positive` | `user.uid` | Primary numeric GID (`> 0`). |
@@ -81,8 +83,8 @@ Any extra attributes accepted by `pkgs.dockerTools.buildLayeredImage` (such as `
 
 `variants.<variant>` creates an image named `<name>-<variant>` (published to `ghcr.io/kevinastone/nix-containers/<name>-<variant>`) that inherits from the base image:
 
-- **Inherited & overridable scalars**: `package`, `tag`, `category`, `description`, `licenses`, `runAsNonRoot`, `user.*`, `includeCaCerts`, `includeTzdata`, `enableShell`, `config.{Entrypoint,Cmd,User,WorkingDir,StopSignal}`, `dirs.<path>.*`, and `config.Labels.<key>` inherit via `lib.mkDefault`, so variants can override any of them directly without `lib.mkForce`.
-- **Merged collections**: `contents`, `structureTest`, `extraTags`, `dirs`, `extraUsers`, `extraCommands`, `fakeRootCommands`, `config.{Env,ExposedPorts,Volumes,Labels}`, and `passthru.tests` merge automatically with the base image. (Use `lib.mkForce` in a variant only if you want to discard inherited list items.)
+- **Inherited & overridable scalars**: `package`, `tag`, `category`, `description`, `licenses`, `runAsNonRoot`, `readOnlyRoot`, `user.*`, `includeCaCerts`, `includeTzdata`, `enableShell`, `config.{Entrypoint,Cmd,User,WorkingDir,StopSignal}`, `dirs.<path>.*`, and `config.Labels.<key>` inherit via `lib.mkDefault`, so variants can override any of them directly without `lib.mkForce`.
+- **Merged collections**: `contents`, `features`, `structureTest`, `extraTags`, `dirs`, `extraUsers`, `extraCommands`, `fakeRootCommands`, `config.{Env,ExposedPorts,Volumes,Labels}`, and `passthru.tests` merge automatically with the base image. (Use `lib.mkForce` in a variant only if you want to discard inherited list items.)
 
 ```nix
 {
