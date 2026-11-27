@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["-d", "-p", "-c", "/etc/unbound/unbound.conf"]
+  exposedPorts: ["5335"]
+  volumes: ["/config"]
+
+commandTests:
+  - name: "unbound version"
+    command: "unbound"
+    args: ["-V"]
+    expectedOutput: ["Version "]
+
+  - name: "unbound default config check"
+    command: "unbound-checkconf"
+    args: ["/etc/unbound/unbound.conf"]
+    expectedOutput: ["no errors"]
+
+fileExistenceTests:
+  - name: "/etc/unbound/unbound.conf exists"
+    path: "/etc/unbound/unbound.conf"
+    shouldExist: true
+
+  - name: "/config exists"
+    path: "/config"
+    shouldExist: true
+    uid: 65532
+    gid: 65532
+    permissions: "drwxr-xr-x"

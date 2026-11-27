@@ -38,6 +38,12 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 
 | [`keycloak`](nix/containers/keycloak/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/keycloak "GHCR image") [❄️](nix/containers/keycloak/default.nix "Nix recipe") | `26.8.2` | ✓ | ✓ | ✓ | — | Identity and access management for modern applications and services |
 | [`opentofu-runner`](nix/containers/opentofu-runner/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/opentofu-runner "GHCR image") [❄️](nix/containers/opentofu-runner/default.nix "Nix recipe") | `0.17.0` | ✓ | ✓ | ✓ | — | Flux Tofu Controller runner with OpenTofu |
 
+### Networking
+
+| Container | Version | Non-Root | RO Root | Shell | Features | Description |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| [`unbound`](nix/containers/unbound/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/unbound "GHCR image") [❄️](nix/containers/unbound/default.nix "Nix recipe") | `1.26.2` | ✓ | ✓ | — | — | Validating, recursive, and caching DNS resolver |
+
 ### Monitoring & Hardware
 
 | Container | Version | Non-Root | RO Root | Shell | Features | Description |
