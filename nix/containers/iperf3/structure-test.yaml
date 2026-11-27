@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/container-structure-test.json
+schemaVersion: "2.0.0"
+
+metadataTest:
+  cmd: ["--server"]
+  exposedPorts: ["5201"]
+
+commandTests:
+  - name: "iperf3 version"
+    command: "iperf3"
+    args: ["--version"]
+    expectedOutput: ["iperf 3\\."]

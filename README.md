@@ -43,6 +43,7 @@ All images support `linux/amd64` and `linux/arm64` unless noted otherwise (📦 
 | Container | Version | Non-Root | RO Root | Shell | Features | Description |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | [`dnsdist`](nix/containers/dnsdist/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/dnsdist "GHCR image") [❄️](nix/containers/dnsdist/default.nix "Nix recipe") | `2.1.3` | ✓ | ✓ | — | — | DNS Loadbalancer |
+| [`iperf3`](nix/containers/iperf3/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/iperf3 "GHCR image") [❄️](nix/containers/iperf3/default.nix "Nix recipe") | `3.21` | ✓ | ✓ | — | — | Tool to measure IP bandwidth using UDP or TCP |
 | [`unbound`](nix/containers/unbound/README.md) [📦](https://ghcr.io/kevinastone/nix-containers/unbound "GHCR image") [❄️](nix/containers/unbound/default.nix "Nix recipe") | `1.26.2` | ✓ | ✓ | — | — | Validating, recursive, and caching DNS resolver |
 
 ### Monitoring & Hardware
