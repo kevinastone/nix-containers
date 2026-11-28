@@ -11,6 +11,10 @@ metadataTest:
       value: "/var/run/nut"
     - key: "NUT_USER"
       value: "root"
+    - key: "NUT_QUIET_INIT_NDE_WARNING"
+      value: "true"
+    - key: "NUT_QUIET_INIT_UPSNOTIFY"
+      value: "true"
 
 commandTests:
   - name: "upsd version"

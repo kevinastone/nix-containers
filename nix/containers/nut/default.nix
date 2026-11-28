@@ -50,6 +50,8 @@ containerTools.buildLayeredImage {
       "NUT_STATEPATH=${stateDir}"
       "NUT_ALTPIDPATH=${stateDir}"
       "NUT_USER=root"
+      "NUT_QUIET_INIT_NDE_WARNING=true"
+      "NUT_QUIET_INIT_UPSNOTIFY=true"
     ];
     ExposedPorts = {
       "3493/tcp" = { };
