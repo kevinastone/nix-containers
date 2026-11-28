@@ -86,6 +86,7 @@ Because `buildLayeredImage` evaluates configurations with `lib.evalModules`, any
 | Mixin | Effect |
 | :--- | :--- |
 | `containerTools.mixins.configDir` | Creates `/config` (`dirs."/config"`), sets `WorkingDir = "/config"` (`mkDefault`) and `Volumes."/config"`, and verifies them in `structureTest`. |
+| `containerTools.mixins.dinit` | Includes `dinit`, generates and validates (`dinit-check`) immutable service definitions from `dinit.services`, configures `dinit --container` as PID 1 (`socketPath` defaulting to `/tmp/dinitctl`), and verifies them in `structureTest`. |
 | `containerTools.mixins.python` | Appends `PYTHONDONTWRITEBYTECODE=1` and `PYTHONUNBUFFERED=1` to `config.Env` (and verifies them in `structureTest`). |
 | `containerTools.mixins.dotnet` | Appends `DOTNET_EnableDiagnostics=0` to `config.Env` (and verifies it in `structureTest`). |
 | `containerTools.mixins.servarr` | Imports `configDir` and `dotnet`, and appends `<NAME>__UPDATE__MECHANISM=External` and `<NAME>__UPDATE__AUTOMATICALLY=false` to `config.Env` (and verifies them in `structureTest`). |

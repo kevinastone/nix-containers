@@ -2,7 +2,6 @@
   lib,
   containerTools,
   nut,
-  writeShellApplication,
 }:
 let
   confDir = "/etc/nut";
@@ -18,20 +17,14 @@ let
     inherit (nutmon) uid gid;
     mode = "0750";
   };
-
-  nut-entrypoint = writeShellApplication {
-    name = "nut-entrypoint";
-    runtimeInputs = [ nut ];
-    text = builtins.readFile ./nut-entrypoint.sh;
-  };
 in
 containerTools.buildLayeredImage {
+  imports = [ containerTools.mixins.dinit ];
   package = nut;
   category = "monitoring";
   runAsNonRoot = false;
   enableShell = true;
   extraUsers.nutmon = nutmon;
-  contents = [ nut-entrypoint ];
   dirs = {
     ${confDir} = {
       inherit (nutmon) gid;
@@ -40,15 +33,29 @@ containerTools.buildLayeredImage {
     ${stateDir} = nutStateDir;
     "/var/state/ups" = nutStateDir;
   };
+  dinit.services = {
+    upsdrv = {
+      type = "scripted";
+      command = "${lib.getExe' nut "upsdrvctl"} -u \${NUT_USER:-root} start";
+      stopCommand = "${lib.getExe' nut "upsdrvctl"} stop";
+    };
+    upsd = {
+      command = "${lib.getExe' nut "upsd"} -u \${NUT_USER:-root} -F";
+      dependsOn = [ "upsdrv" ];
+    };
+  };
   config = {
-    Entrypoint = [ (lib.getExe nut-entrypoint) ];
     Env = [
       "NUT_CONFPATH=${confDir}"
       "NUT_STATEPATH=${stateDir}"
       "NUT_ALTPIDPATH=${stateDir}"
+      "NUT_USER=root"
     ];
     ExposedPorts = {
       "3493/tcp" = { };
+    };
+    Volumes = {
+      ${stateDir} = { };
     };
   };
   structureTest = ./structure-test.yaml;

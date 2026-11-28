@@ -20,7 +20,7 @@
         inherit lib;
         inherit (pkgs) dockerTools;
       };
-      mixins = import ./mixins;
+      mixins = import ./mixins { inherit pkgs; };
       tests = import ./tests {
         inherit lib pkgs writeNuApplication;
       };

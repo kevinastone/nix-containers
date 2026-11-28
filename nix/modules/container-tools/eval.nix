@@ -4,53 +4,53 @@
   mkImageModule,
 }:
 let
-  additiveTopKeys = [
-    "contents"
-    "features"
-    "structureTest"
-    "extraTags"
-    "extraCommands"
-    "fakeRootCommands"
-  ];
+  isPlainAttrs = v: builtins.isAttrs v && !(lib.isDerivation v) && (v._type or null) == null;
 
-  mapLeavesDefault = lib.mapAttrs (_: lib.mkDefault);
+  isAdditiveType =
+    t:
+    t.name == "listOf"
+    || t.name == "separatedString"
+    || (t.name == "coercedTo" && isAdditiveType t.nestedTypes.finalType);
+
+  wrapByType =
+    t: val:
+    if (val._type or null) != null || isAdditiveType t then
+      val
+    else if t.name == "submodule" && isPlainAttrs val then
+      wrapByOptTree (t.getSubOptions [ ]) val
+    else if t.name == "attrsOf" && isPlainAttrs val then
+      lib.mapAttrs (_: wrapByType t.nestedTypes.elemType) val
+    else
+      lib.mkDefault val;
+
+  wrapByOptTree =
+    optTree: attrSet:
+    lib.mapAttrs (
+      k: v:
+      if optTree ? ${k} then
+        let
+          node = optTree.${k};
+        in
+        if lib.isOption node then
+          wrapByType node.type v
+        else if builtins.isAttrs node && isPlainAttrs v then
+          wrapByOptTree node v
+        else
+          lib.mkDefault v
+      else
+        lib.mkDefault v
+    ) attrSet;
 
   toVariantBaseArgs =
-    variantDefaultName: baseArgs:
+    baseOpts: variantDefaultName: baseArgs:
     let
       stripped = removeAttrs baseArgs [
         "imports"
         "name"
         "variants"
       ];
-      wrapTopKey =
-        k: v:
-        if builtins.elem k additiveTopKeys then
-          v
-        else if k == "user" && builtins.isAttrs v then
-          mapLeavesDefault v
-        else if (k == "dirs" || k == "extraUsers") && builtins.isAttrs v then
-          lib.mapAttrs (_: spec: if builtins.isAttrs spec then mapLeavesDefault spec else spec) v
-        else if k == "config" && builtins.isAttrs v then
-          lib.mapAttrs (
-            ck: cv:
-            if ck == "Env" || ck == "ExposedPorts" || ck == "Volumes" then
-              cv
-            else if ck == "Labels" && builtins.isAttrs cv then
-              mapLeavesDefault cv
-            else
-              lib.mkDefault cv
-          ) v
-        else if k == "meta" && builtins.isAttrs v then
-          mapLeavesDefault v
-        else if k == "passthru" && builtins.isAttrs v then
-          lib.mapAttrs (
-            pk: pv: if pk == "tests" && builtins.isAttrs pv then mapLeavesDefault pv else lib.mkDefault pv
-          ) v
-        else
-          lib.mkDefault v;
     in
-    (lib.mapAttrs wrapTopKey stripped)
+    wrapByOptTree baseOpts stripped
     // {
       name = lib.mkDefault variantDefaultName;
     };
@@ -89,7 +89,7 @@ let
       builtins.length allUserNames == builtins.length (lib.unique allUserNames)
     ) "containerTools: duplicate usernames across `user` and `extraUsers`";
     {
-      inherit cfg passthroughArgs;
+      inherit cfg opts passthroughArgs;
     };
 in
 args:
@@ -121,7 +121,7 @@ let
         (cleanArgs.imports or [ ])
         ++ [
           {
-            config = toVariantBaseArgs "${base.cfg.name}-${variantName}" cleanArgs;
+            config = toVariantBaseArgs base.opts "${base.cfg.name}-${variantName}" cleanArgs;
           }
         ]
         ++ (variantArgs.imports or [ ])
@@ -134,4 +134,4 @@ let
     }
   ) base.cfg.variants;
 in
-base // { inherit variants; }
+removeAttrs base [ "opts" ] // { inherit variants; }
