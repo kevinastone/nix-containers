@@ -1,6 +1,19 @@
 # Contributing & Local Development
 
-This guide covers local development, scaffolding new containers, authoring variants, and running tests in `nix-containers`.
+This guide covers container inclusion criteria, local development, scaffolding new containers, authoring variants, and running tests in `nix-containers`.
+
+---
+
+## Container Inclusion Criteria
+
+Avoid re-implementing official first-party container images unless there is a clear technical justification. Good candidates typically meet at least one of the following criteria:
+
+- **No official first-party OCI image exists** — Upstream only distributes source releases or OS packages (for example, `unbound`, `dnsdist`, `iperf3`, `nut`, `ffmpeg`).
+- **Upstream relies on root-oriented third-party images** — Upstream delegates container packaging to third-party maintainers (such as `linuxserver.io`) whose images require `root` init supervisors (`s6-overlay` `PUID`/`PGID` `chown` hooks) and fail the Kubernetes `restricted` Pod Security Standard or `--read-only` root filesystems (for example, `*arr`, `sabnzbd`, `qbittorrent`, `calibre-web`).
+- **Build-time customization or component replacement is required** — Upstream's official image requires downstream custom builds to be production-ready, bundle plugins, or swap components (for example, `keycloak` pre-compiled with `--optimized`, or `opentofu-runner` replacing Terraform with OpenTofu).
+- **Incomplete or bloated upstream images** — Upstream's image lacks `linux/arm64` support, is unmaintained, or carries heavy base-distro bloat where a minimal Nix closure meaningfully improves security and size.
+
+If an upstream project already publishes a minimal, multi-architecture (`linux/amd64` + `linux/arm64`), rootless-compatible first-party image, prefer consuming it directly rather than duplicating it here.
 
 ---
 
